@@ -1,0 +1,275 @@
+# ============================================
+# Helpuvio - Complete .gitignore
+# ============================================
+
+# ==================== PYTHON/BACKEND ====================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Alembic
+alembic/versions/__pycache__/
+
+# ==================== NODE/FRONTEND ====================
+
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Production build
+dist/
+build/
+.next/
+out/
+
+# Cache
+.npm
+.eslintcache
+.stylelintcache
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output
+
+# Misc
+.DS_Store
+*.pem
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Vite
+.vite/
+
+# ==================== DATABASE ====================
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL
+*.pgsql
+*.sql.bak
+
+# Backup files
+*.bak
+*.backup
+*.dump
+
+# ==================== IDE/EDITOR ====================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA / PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ==================== OS ====================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+.Trash-*
+.nfs*
+
+# ==================== SECRETS & CONFIG ====================
+
+# Environment variables (CRITICAL - DO NOT COMMIT)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Config files with secrets
+config/secrets.json
+config/production.json
+secrets.yml
+
+# ==================== PROJECT-SPECIFIC ====================
+
+# Uploaded datasets (sensitive data)
+backend/uploads/
+backend/datasets/
+storage/datasets/
+*.csv
+
+# Download cache
+downloads/
+temp/
+tmp/
+.cache/
+
+# Generated files
+*.pyc
+*.pyo
+*.pyd
+
+# Documentation build
+docs/_build/
+site/
+
+# ==================== DEPLOYMENT ====================
+
+# Docker
+.dockerignore
+
+# CI/CD
+.github/workflows/secrets.yml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ==================== MISC ====================
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive files (sometimes contain secrets)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Log files
+*.log
+logs/
+
+# Local development
+.local/
+local/
+
+# Test data (may contain sensitive info)
+test-data/
+sample-data/
+fixtures/
+
+# ==================== ALLOW EXCEPTIONS ====================
+
+# Allow example files
+!.env.example
+!sample_dataset.csv
+!test_fixtures.json
