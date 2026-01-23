@@ -1,195 +1,169 @@
+# app/routers/datasets.py
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_, func
 from typing import List, Optional
 from app.core.database import get_db
 from app.models.dataset import Dataset, Category, DatasetField
-from app.schemas.dataset import DatasetResponse, DatasetDetail, DatasetListResponse
-import logging
+from app.schemas.dataset import (
+    DatasetResponse, 
+    DatasetDetail, 
+    DatasetListResponse,
+    CategoryResponse,
+    CategorySimple
+)
 
-logger = logging.getLogger(__name__)
+# REMOVE prefix="/datasets" from here
+router = APIRouter(tags=["datasets"])
 
-router = APIRouter()
-
-
-@router.get("/", response_model=DatasetListResponse)
+# Rest of your code stays the same...
+@router.get("", response_model=List[DatasetResponse])
 async def list_datasets(
-    category: Optional[str] = Query(None, description="Filter by category slug"),
-    location: Optional[str] = Query(None, description="Filter by location"),
-    min_price: Optional[int] = Query(None, description="Minimum price in cents"),
-    max_price: Optional[int] = Query(None, description="Maximum price in cents"),
-    search: Optional[str] = Query(None, description="Search in name and description"),
+    category: Optional[str] = None,
+    location: Optional[str] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
+    # ... rest of your code
     """
-    List all published datasets with optional filters
-    """
-    try:
-        # Base query - only published datasets
-        query = db.query(Dataset).filter(Dataset.is_published == True)
-        
-        # Apply filters
-        if category:
-            query = query.join(Category).filter(Category.slug == category)
-        
-        if location:
-            query = query.filter(Dataset.location.ilike(f"%{location}%"))
-        
-        if min_price is not None:
-            query = query.filter(Dataset.price_cents >= min_price)
-        
-        if max_price is not None:
-            query = query.filter(Dataset.price_cents <= max_price)
-        
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    Dataset.name.ilike(search_term),
-                    Dataset.description.ilike(search_term)
-                )
-            )
-        
-        # Get total count
-        total = query.count()
-        
-        # Apply pagination
-        offset = (page - 1) * limit
-        datasets = query.order_by(Dataset.created_at.desc()).offset(offset).limit(limit).all()
-        
-        # Convert to response format
-        dataset_list = []
-        for dataset in datasets:
-            category_info = None
-            if dataset.category:
-                category_info = {
-                    "id": dataset.category.id,
-                    "name": dataset.category.name,
-                    "slug": dataset.category.slug,
-                    "icon": dataset.category.icon
-                }
-            
-            dataset_list.append({
-                "id": dataset.id,
-                "name": dataset.name,
-                "slug": dataset.slug,
-                "description": dataset.description,
-                "category": category_info,
-                "location": dataset.location,
-                "company_count": dataset.company_count,
-                "enrichment_level": dataset.enrichment_level,
-                "price": dataset.price_cents / 100,  # Convert to dollars
-                "price_cents": dataset.price_cents,
-                "total_purchases": dataset.total_purchases,
-                "created_at": dataset.created_at.isoformat()
-            })
-        
-        return {
-            "datasets": dataset_list,
-            "total": total,
-            "page": page,
-            "limit": limit,
-            "total_pages": (total + limit - 1) // limit
-        }
+    Get all published datasets with optional filters
     
-    except Exception as e:
-        logger.error(f"Error listing datasets: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch datasets: {str(e)}")
+    Parameters:
+    - category: Filter by category slug
+    - location: Filter by location (case-insensitive partial match)
+    - min_price: Minimum price in dollars
+    - max_price: Maximum price in dollars
+    - page: Page number (default: 1)
+    - page_size: Items per page (default: 20, max: 100)
+    """
+    # Base query - only published datasets
+    query = db.query(Dataset).options(
+        joinedload(Dataset.category)
+    ).filter(Dataset.is_published == True)
+    
+    # Apply filters
+    if category:
+        query = query.join(Category).filter(Category.slug == category)
+    
+    if location:
+        query = query.filter(Dataset.location.ilike(f"%{location}%"))
+    
+    if min_price is not None:
+        query = query.filter(Dataset.price_cents >= min_price * 100)
+    
+    if max_price is not None:
+        query = query.filter(Dataset.price_cents <= max_price * 100)
+    
+    # Order by newest first
+    query = query.order_by(Dataset.created_at.desc())
+    
+    # Get datasets
+    datasets = query.offset((page - 1) * page_size).limit(page_size).all()
+    
+    # Convert to response format
+    return [
+        DatasetResponse(
+            id=d.id,
+            name=d.name,
+            slug=d.slug,
+            description=d.description,
+            category=CategorySimple(
+                id=d.category.id,
+                name=d.category.name,
+                slug=d.category.slug,
+                icon=d.category.icon
+            ) if d.category else None,
+            location=d.location,
+            company_count=d.company_count,
+            price=d.price_cents / 100,  # Convert cents to dollars
+            enrichment_level=d.enrichment_level,
+            is_published=d.is_published,
+            total_purchases=d.total_purchases or 0,
+            created_at=d.created_at
+        )
+        for d in datasets
+    ]
 
-
-@router.get("/categories")
+@router.get("/categories", response_model=List[CategoryResponse])
 async def list_categories(db: Session = Depends(get_db)):
-    """
-    List all active categories
-    """
-    try:
-        categories = db.query(Category).filter(
-            Category.is_active == True
-        ).order_by(Category.display_order).all()
-        
-        return {
-            "categories": [
-                {
-                    "id": cat.id,
-                    "name": cat.name,
-                    "slug": cat.slug,
-                    "icon": cat.icon,
-                    "description": cat.description
-                }
-                for cat in categories
-            ]
-        }
-    except Exception as e:
-        logger.error(f"Error listing categories: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch categories")
-
+    """Get all active categories"""
+    categories = db.query(Category).filter(
+        Category.is_active == True
+    ).order_by(Category.display_order).all()
+    
+    return categories
 
 @router.get("/{slug}", response_model=DatasetDetail)
-async def get_dataset_detail(
-    slug: str,
-    db: Session = Depends(get_db)
-):
+async def get_dataset(slug: str, db: Session = Depends(get_db)):
     """
-    Get detailed information about a specific dataset
-    """
-    try:
-        dataset = db.query(Dataset).filter(
-            and_(
-                Dataset.slug == slug,
-                Dataset.is_published == True
-            )
-        ).first()
-        
-        if not dataset:
-            raise HTTPException(status_code=404, detail="Dataset not found")
-        
-        # Get dataset fields
-        fields = db.query(DatasetField).filter(
-            DatasetField.dataset_id == dataset.id
-        ).order_by(DatasetField.display_order).all()
-        
-        # Category info
-        category_info = None
-        if dataset.category:
-            category_info = {
-                "id": dataset.category.id,
-                "name": dataset.category.name,
-                "slug": dataset.category.slug,
-                "icon": dataset.category.icon
-            }
-        
-        # Build field list
-        field_list = [
-            {
-                "name": field.field_name,
-                "label": field.field_label,
-                "is_enriched": field.is_enriched
-            }
-            for field in fields
-        ]
-        
-        return {
-            "id": dataset.id,
-            "name": dataset.name,
-            "slug": dataset.slug,
-            "description": dataset.description,
-            "category": category_info,
-            "location": dataset.location,
-            "company_count": dataset.company_count,
-            "enrichment_level": dataset.enrichment_level,
-            "price": dataset.price_cents / 100,
-            "price_cents": dataset.price_cents,
-            "total_purchases": dataset.total_purchases,
-            "fields": field_list,
-            "sample_preview": dataset.sample_preview_json,
-            "created_at": dataset.created_at.isoformat(),
-            "last_updated": dataset.updated_at.isoformat() if dataset.updated_at else None
-        }
+    Get dataset details by slug
     
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error fetching dataset {slug}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch dataset: {str(e)}")
+    Returns:
+    - Full dataset information
+    - Sample preview (redacted emails/phones)
+    - List of included fields
+    """
+    dataset = db.query(Dataset).options(
+        joinedload(Dataset.category),
+        joinedload(Dataset.fields)
+    ).filter(
+        Dataset.slug == slug,
+        Dataset.is_published == True
+    ).first()
+    
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    return DatasetDetail(
+        id=dataset.id,
+        name=dataset.name,
+        slug=dataset.slug,
+        description=dataset.description,
+        category=CategorySimple(
+            id=dataset.category.id,
+            name=dataset.category.name,
+            slug=dataset.category.slug,
+            icon=dataset.category.icon
+        ) if dataset.category else None,
+        location=dataset.location,
+        company_count=dataset.company_count,
+        price=dataset.price_cents / 100,
+        enrichment_level=dataset.enrichment_level,
+        sample_preview=dataset.sample_preview_json,
+        fields=[
+            {
+                "field_name": f.field_name,
+                "field_label": f.field_label,
+                "is_enriched": f.is_enriched,
+                "display_order": f.display_order
+            }
+            for f in sorted(dataset.fields, key=lambda x: x.display_order)
+        ] if dataset.fields else [],
+        total_purchases=dataset.total_purchases or 0,
+        created_at=dataset.created_at,
+        updated_at=dataset.updated_at
+    )
+
+@router.get("/stats/summary")
+async def get_dataset_stats(db: Session = Depends(get_db)):
+    """Get dataset statistics"""
+    total_datasets = db.query(func.count(Dataset.id)).filter(
+        Dataset.is_published == True
+    ).scalar()
+    
+    total_companies = db.query(func.sum(Dataset.company_count)).filter(
+        Dataset.is_published == True
+    ).scalar() or 0
+    
+    total_purchases = db.query(func.sum(Dataset.total_purchases)).filter(
+        Dataset.is_published == True
+    ).scalar() or 0
+    
+    return {
+        "total_datasets": total_datasets,
+        "total_companies": total_companies,
+        "total_purchases": total_purchases
+    }

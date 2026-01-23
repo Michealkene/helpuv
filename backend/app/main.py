@@ -1,86 +1,97 @@
+# helpuvio/backend/app/main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
+from fastapi.middleware.gzip import GZipMiddleware
+import os
 
-# Import routers
-from app.routers import auth, datasets, purchases, downloads, admin, webhooks
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Startup and shutdown events"""
-    logger.info("🚀 Starting Helpuvio API...")
-    yield
-    logger.info("👋 Shutting down Helpuvio API...")
-
-
-# Create FastAPI app
 app = FastAPI(
     title="Helpuvio API",
-    description="B2B Lead Data Marketplace API",
+    description="Dataset marketplace and analytics platform",
     version="1.0.0",
-    lifespan=lifespan,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
-# CORS Configuration - CRITICAL FIX
+# ============================================
+# CORS Configuration
+# ============================================
+# Get allowed origins from environment or use defaults
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+if not allowed_origins or allowed_origins == [""]:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://helpuvio.com",
+        "https://www.helpuvio.com",
+        "https://api.helpuvio.com",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # Alternative frontend port
-        "https://helpuvio.com",   # Production domain
-        "https://*.helpuvio.com", # Subdomains
-        "https://*.vercel.app",   # Vercel preview deployments
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
-# Health check endpoint
+# ============================================
+# Compression Middleware
+# ============================================
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# ============================================
+# Health Check Endpoint
+# ============================================
 @app.get("/health")
 async def health_check():
-    """Health check endpoint for monitoring"""
     return {
         "status": "healthy",
-        "service": "helpuvio-api",
+        "service": "helpuvio-backend",
         "version": "1.0.0"
     }
 
-# Root endpoint
 @app.get("/")
 async def root():
-    """API root endpoint"""
     return {
         "message": "Helpuvio API",
-        "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
     }
 
-# Include routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(datasets.router, prefix="/api/datasets", tags=["Datasets"])
-app.include_router(purchases.router, prefix="/api/purchases", tags=["Purchases"])
-app.include_router(downloads.router, prefix="/api/downloads", tags=["Downloads"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
-app.include_router(webhooks.router, prefix="/api/webhooks", tags=["Webhooks"])
+# ============================================
+# Include Routers
+# ============================================
+from app.routers import datasets, auth
 
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
+app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["datasets"])
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+from app.routers import email_verification
+
+# Include router
+app.include_router(
+    email_verification.router, 
+    prefix="/api/v1/emails", 
+    tags=["Email Verification"]
+)
+
+# Uncomment these when you create the router files:
+# from app.routers import users, transactions
+# app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+# app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
+
+# ============================================
+# Startup Event
+# ============================================
+@app.on_event("startup")
+async def startup_event():
+    print("🚀 Helpuvio Backend starting...")
+    print(f"📍 CORS enabled for: {allowed_origins}")
+    print(f"🌍 Environment: {os.getenv('ENVIRONMENT', 'development')}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("👋 Helpuvio Backend shutting down...")
