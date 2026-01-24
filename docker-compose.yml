@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # TRAEFIK - Reverse Proxy & SSL Manager
+  # ============================================
+  traefik:
+    image: traefik:v3.6.4
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=michealkene@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.helpuvio.com`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$8fqlNzJe$$Qd1fGVNJzZ5fLJPLHN2V/1"
+
+  # ============================================
+  # HELPUVIO - Main Application
+  # ============================================
+  
+  # Redis for Helpuvio
+  helpuvio-redis:
+    image: redis:7-alpine
+    container_name: helpuvio_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${HELPUVIO_REDIS_PASSWORD:-change_this_redis_password}
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Helpuvio Backend API
+  helpuvio-backend:
+    build:
+      context: ./helpuvio/backend
+      dockerfile: Dockerfile
+    container_name: helpuvio_backend
+    restart: unless-stopped
+    env_file:
+      - ./helpuvio/backend/.env
+    volumes:
+      - ./helpuvio/backend/app:/app/app
+      - helpuvio_uploads:/app/uploads
+    depends_on:
+      helpuvio-redis:
+        condition: service_healthy
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`) || PathPrefix(`/health`) || PathPrefix(`/docs`) || PathPrefix(`/redoc`) || PathPrefix(`/openapi.json`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.backend.priority=10"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Helpuvio Frontend
+  helpuvio-frontend:
+    build:
+      context: ./helpuvio/frontend
+      dockerfile: Dockerfile
+    container_name: helpuvio_frontend
+    restart: unless-stopped
+    volumes:
+      # Mount source files for hot reload
+      - ./helpuvio/frontend/src:/app/src
+      - ./helpuvio/frontend/public:/app/public
+      - ./helpuvio/frontend/index.html:/app/index.html
+      - ./helpuvio/frontend/vite.config.ts:/app/vite.config.ts
+      - ./helpuvio/frontend/tailwind.config.js:/app/tailwind.config.js
+      - ./helpuvio/frontend/postcss.config.js:/app/postcss.config.js
+      - ./helpuvio/frontend/tsconfig.json:/app/tsconfig.json
+      # IMPORTANT: Use named volume for node_modules to prevent overwrite
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - VITE_API_URL=/api/v1
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+
+  # ============================================
+  # N8N - Workflow Automation
+  # ============================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    user: "1000:1000"
+    environment:
+      - N8N_HOST=n8n.helpuvio.com
+      - N8N_PROTOCOL=https
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://n8n.helpuvio.com/
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.helpuvio.com`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+volumes:
+  helpuvio_uploads:
+  frontend_node_modules:  # Named volume for node_modules
+
+networks:
+  web:
+    driver: bridge
