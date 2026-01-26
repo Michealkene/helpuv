@@ -1,342 +1,409 @@
 """
-Authentication routes including Google OAuth
+Authentication Router - User registration, login, and token management
 """
-from fastapi import APIRouter, HTTPException, Depends, Response, Request
-from fastapi.responses import RedirectResponse
-from sqlalchemy.orm import Session
-from typing import Optional
-import httpx
-import os
-from datetime import timedelta
 
-from app.database import get_db
-from app.models import User
-from app.schemas import UserCreate, UserLogin, Token
-from app.utils.auth import (
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+import uuid
+import secrets
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
+from app.core.database import get_db
+from app.core.config import settings
+from app.core.security import (
+    hash_password,
+    verify_password,
     create_access_token,
     create_refresh_token,
-    verify_password,
-    get_password_hash,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    verify_refresh_token
 )
+from app.core.dependencies import get_current_user
+from app.models.user import User, RefreshToken
+from app.schemas.user import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    AuthResponse,
+    TokenRefreshRequest,
+    TokenRefreshResponse,
+    PasswordReset,
+    PasswordResetConfirm,
+    MessageResponse,
+    GoogleAuthRequest
+)
+from app.services.email_service import EmailService
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
-
-# Environment variables
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://helpuvio.com/auth/google/callback")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://helpuvio.com")
-
-
-@router.get("/google")
-async def google_login():
-    """
-    Redirect user to Google OAuth consent screen
-    """
-    if not GOOGLE_CLIENT_ID:
-        raise HTTPException(
-            status_code=500,
-            detail="Google OAuth is not configured. Please set GOOGLE_CLIENT_ID environment variable."
-        )
-    
-    # Build Google OAuth URL
-    google_auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={GOOGLE_CLIENT_ID}&"
-        f"redirect_uri={GOOGLE_REDIRECT_URI}&"
-        f"response_type=code&"
-        f"scope=openid%20email%20profile&"
-        f"access_type=offline&"
-        f"prompt=consent"
-    )
-    
-    return RedirectResponse(url=google_auth_url)
+router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
-@router.get("/google/callback")
-async def google_callback(
-    code: str,
-    db: Session = Depends(get_db),
-    error: Optional[str] = None
+@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+async def signup(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
 ):
     """
-    Handle Google OAuth callback
-    """
-    # Check for errors from Google
-    if error:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Google OAuth error: {error}"
-        )
+    Register a new user account.
     
-    if not code:
-        raise HTTPException(
-            status_code=400,
-            detail="Authorization code not provided"
-        )
-    
-    try:
-        # Exchange authorization code for access token
-        token_url = "https://oauth2.googleapis.com/token"
-        token_data = {
-            "code": code,
-            "client_id": GOOGLE_CLIENT_ID,
-            "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri": GOOGLE_REDIRECT_URI,
-            "grant_type": "authorization_code",
-        }
-        
-        async with httpx.AsyncClient() as client:
-            token_response = await client.post(token_url, data=token_data)
-            token_response.raise_for_status()
-            tokens = token_response.json()
-        
-        # Get user info from Google
-        userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        headers = {"Authorization": f"Bearer {tokens['access_token']}"}
-        
-        async with httpx.AsyncClient() as client:
-            userinfo_response = await client.get(userinfo_url, headers=headers)
-            userinfo_response.raise_for_status()
-            user_info = userinfo_response.json()
-        
-        # Extract user data
-        email = user_info.get("email")
-        name = user_info.get("name", "")
-        google_id = user_info.get("id")
-        picture = user_info.get("picture")
-        
-        if not email:
-            raise HTTPException(status_code=400, detail="Email not provided by Google")
-        
-        # Check if user exists
-        user = db.query(User).filter(User.email == email).first()
-        
-        if not user:
-            # Create new user
-            user = User(
-                email=email,
-                name=name,
-                google_id=google_id,
-                profile_picture=picture,
-                is_verified=True,  # Email verified by Google
-                oauth_provider="google"
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        else:
-            # Update existing user with Google info
-            user.google_id = google_id
-            user.profile_picture = picture
-            user.is_verified = True
-            if not user.name:
-                user.name = name
-            db.commit()
-        
-        # Create JWT tokens
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email}
-        )
-        refresh_token = create_refresh_token(
-            data={"sub": str(user.id)}
-        )
-        
-        # Redirect to frontend with tokens
-        redirect_url = (
-            f"{FRONTEND_URL}/auth/callback?"
-            f"access_token={access_token}&"
-            f"refresh_token={refresh_token}"
-        )
-        
-        return RedirectResponse(url=redirect_url)
-        
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to authenticate with Google: {e.response.text}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Authentication failed: {str(e)}"
-        )
-
-
-@router.post("/signup", response_model=Token)
-async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
+    - Creates user with hashed password
+    - Returns access and refresh tokens
     """
-    Register new user with email and password
-    """
-    # Check if user exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == user_data.email.lower()).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
     
     # Create new user
     user = User(
-        email=user_data.email,
+        id=uuid.uuid4(),
+        email=user_data.email.lower(),
+        password_hash=hash_password(user_data.password),
         name=user_data.name,
-        password_hash=get_password_hash(user_data.password),
-        is_verified=False
+        is_active=True,
+        email_verified=False,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
     )
+    
     db.add(user)
     db.commit()
     db.refresh(user)
     
-    # Create tokens
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email}
+    # Generate tokens
+    access_token = create_access_token({"sub": str(user.id), "email": user.email})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+    
+    # Store refresh token
+    token_record = RefreshToken(
+        user_id=user.id,
+        token=refresh_token,
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     )
-    refresh_token = create_refresh_token(
-        data={"sub": str(user.id)}
-    )
+    db.add(token_record)
+    db.commit()
     
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
-
-
-@router.post("/login", response_model=Token)
-async def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    """
-    Login with email and password
-    """
-    user = db.query(User).filter(User.email == user_data.email).first()
+    # Send welcome email (async, don't wait)
+    email_service = EmailService()
+    await email_service.send_welcome_email(user.email, user.name)
     
-    if not user or not verify_password(user_data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Create tokens
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email}
-    )
-    refresh_token = create_refresh_token(
-        data={"sub": str(user.id)}
-    )
-    
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
-
-
-@router.post("/refresh", response_model=Token)
-async def refresh_token_endpoint(refresh_token: str, db: Session = Depends(get_db)):
-    """
-    Refresh access token using refresh token
-    """
-    from app.utils.auth import decode_token
-    
-    try:
-        payload = decode_token(refresh_token)
-        user_id = payload.get("sub")
-        
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        # Verify user exists
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        # Create new tokens
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email}
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse(
+            id=str(user.id),
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            email_verified=user.email_verified,
+            created_at=user.created_at
         )
-        new_refresh_token = create_refresh_token(
-            data={"sub": str(user.id)}
-        )
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "bearer"
-        }
-        
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    )
 
 
-@router.get("/me")
-async def get_current_user_info(
-    request: Request,
+@router.post("/login", response_model=AuthResponse)
+async def login(
+    credentials: UserLogin,
     db: Session = Depends(get_db)
 ):
-    """Get current user information"""
-    from app.utils.auth import decode_token
-    
-    # Get token from Authorization header
-    authorization = request.headers.get("Authorization")
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    token = authorization.replace("Bearer ", "")
-    
-    try:
-        payload = decode_token(token)
-        user_id = payload.get("sub")
-        
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        current_user = db.query(User).filter(User.id == user_id).first()
-        if not current_user:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        return {
-            "id": current_user.id,
-            "email": current_user.email,
-            "name": current_user.name,
-            "profile_picture": current_user.profile_picture,
-            "is_verified": current_user.is_verified,
-            "created_at": current_user.created_at
-        }
-        
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-@router.post("/logout")
-async def logout():
     """
-    Logout user (client should delete tokens)
+    Authenticate user and return tokens.
     """
-    return {"message": "Logged out successfully"}
+    # Find user
+    user = db.query(User).filter(User.email == credentials.email.lower()).first()
+    
+    if not user or not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated"
+        )
+    
+    # Update last login
+    user.last_login_at = datetime.utcnow()
+    
+    # Generate tokens
+    access_token = create_access_token({"sub": str(user.id), "email": user.email})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+    
+    # Store refresh token
+    token_record = RefreshToken(
+        user_id=user.id,
+        token=refresh_token,
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    db.add(token_record)
+    db.commit()
+    
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse(
+            id=str(user.id),
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            email_verified=user.email_verified,
+            created_at=user.created_at
+        )
+    )
 
 
-# Helper dependency for getting current user
-async def get_current_user(
-    request: Request,
+@router.post("/refresh", response_model=TokenRefreshResponse)
+async def refresh_token(
+    token_data: TokenRefreshRequest,
     db: Session = Depends(get_db)
-) -> User:
+):
     """
-    Get current authenticated user from JWT token
+    Get new access token using refresh token.
     """
-    from app.utils.auth import decode_token
+    # Verify refresh token
+    payload = verify_refresh_token(token_data.refresh_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
     
-    # Get token from Authorization header
-    authorization = request.headers.get("Authorization")
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    # Check if token exists and is not revoked
+    token_record = db.query(RefreshToken).filter(
+        RefreshToken.token == token_data.refresh_token,
+        RefreshToken.revoked_at.is_(None),
+        RefreshToken.expires_at > datetime.utcnow()
+    ).first()
     
-    token = authorization.replace("Bearer ", "")
+    if not token_record:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token expired or revoked"
+        )
     
+    # Get user
+    user = db.query(User).filter(User.id == token_record.user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive"
+        )
+    
+    # Generate new access token
+    access_token = create_access_token({"sub": str(user.id), "email": user.email})
+    
+    return TokenRefreshResponse(access_token=access_token)
+
+
+@router.post("/logout", response_model=MessageResponse)
+async def logout(
+    token_data: TokenRefreshRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Logout by revoking refresh token.
+    """
+    # Find and revoke token
+    token_record = db.query(RefreshToken).filter(
+        RefreshToken.token == token_data.refresh_token
+    ).first()
+    
+    if token_record:
+        token_record.revoked_at = datetime.utcnow()
+        db.commit()
+    
+    return MessageResponse(message="Logged out successfully")
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current authenticated user info.
+    """
+    return UserResponse(
+        id=str(current_user.id),
+        email=current_user.email,
+        name=current_user.name,
+        avatar_url=current_user.avatar_url,
+        email_verified=current_user.email_verified,
+        created_at=current_user.created_at
+    )
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    data: PasswordReset,
+    db: Session = Depends(get_db)
+):
+    """
+    Request password reset email.
+    """
+    user = db.query(User).filter(User.email == data.email.lower()).first()
+    
+    # Always return success to prevent email enumeration
+    if user:
+        # Generate reset token
+        reset_token = secrets.token_urlsafe(32)
+        user.password_reset_token = reset_token
+        user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+        db.commit()
+        
+        # Send email
+        email_service = EmailService()
+        await email_service.send_password_reset(user.email, user.name, reset_token)
+    
+    return MessageResponse(message="If an account exists with this email, you will receive a password reset link")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    data: PasswordResetConfirm,
+    db: Session = Depends(get_db)
+):
+    """
+    Reset password using token from email.
+    """
+    user = db.query(User).filter(
+        User.password_reset_token == data.token,
+        User.password_reset_expires > datetime.utcnow()
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+    
+    # Update password
+    user.password_hash = hash_password(data.new_password)
+    user.password_reset_token = None
+    user.password_reset_expires = None
+    user.updated_at = datetime.utcnow()
+    
+    # Revoke all refresh tokens
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id
+    ).update({"revoked_at": datetime.utcnow()})
+    
+    db.commit()
+    
+    return MessageResponse(message="Password reset successfully")
+
+
+@router.post("/google", response_model=AuthResponse)
+async def google_auth(
+    data: GoogleAuthRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Authenticate with Google OAuth.
+
+    - Verifies Google ID token
+    - Creates new user if not exists
+    - Returns access and refresh tokens
+    """
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google authentication is not configured"
+        )
+
     try:
-        payload = decode_token(token)
-        user_id = payload.get("sub")
-        
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        return user
-        
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        # Verify the Google ID token
+        idinfo = id_token.verify_oauth2_token(
+            data.credential,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+
+        # Extract user info from token
+        google_email = idinfo.get("email")
+        google_name = idinfo.get("name", "")
+        google_picture = idinfo.get("picture")
+        email_verified = idinfo.get("email_verified", False)
+
+        if not google_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email not provided by Google"
+            )
+
+        if not email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google email is not verified"
+            )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Google token: {str(e)}"
+        )
+
+    # Check if user exists
+    user = db.query(User).filter(User.email == google_email.lower()).first()
+
+    if user:
+        # Existing user - update last login and avatar if changed
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated"
+            )
+
+        user.last_login_at = datetime.utcnow()
+        if google_picture and not user.avatar_url:
+            user.avatar_url = google_picture
+        user.email_verified = True  # Google verified the email
+    else:
+        # New user - create account (no password needed for OAuth)
+        user = User(
+            id=uuid.uuid4(),
+            email=google_email.lower(),
+            password_hash=hash_password(secrets.token_urlsafe(32)),  # Random password
+            name=google_name or google_email.split("@")[0],
+            avatar_url=google_picture,
+            is_active=True,
+            email_verified=True,  # Google verified the email
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            last_login_at=datetime.utcnow()
+        )
+        db.add(user)
+
+    db.commit()
+    db.refresh(user)
+
+    # Generate tokens
+    access_token = create_access_token({"sub": str(user.id), "email": user.email})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    # Store refresh token
+    token_record = RefreshToken(
+        user_id=user.id,
+        token=refresh_token,
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    db.add(token_record)
+    db.commit()
+
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse(
+            id=str(user.id),
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            email_verified=user.email_verified,
+            created_at=user.created_at
+        )
+    )

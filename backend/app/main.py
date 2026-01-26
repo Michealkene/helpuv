@@ -1,105 +1,90 @@
-"""
-FastAPI main application
-"""
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os
+from fastapi.exceptions import RequestValidationError
+from contextlib import asynccontextmanager
+from app.core.config import settings
+from app.routers import auth, datasets, purchases, downloads, admin, webhooks, cart
 
-from app.database import engine, Base
-from app.routers import auth, datasets, purchases, admin
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("🚀 Starting B2B Lead Data Marketplace API...")
+    yield
+    # Shutdown
+    print("👋 Shutting down...")
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
-
-# Initialize FastAPI app
+# Create FastAPI app
 app = FastAPI(
-    title="Helpuvio API",
-    description="B2B Lead Data Marketplace API",
+    title="B2B Lead Data Marketplace API",
+    description="Purchase and download company lead datasets",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    lifespan=lifespan
 )
 
-# CORS Configuration
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://helpuvio.com")
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", FRONTEND_URL).split(",")
-
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
-    # CRITICAL: Add these headers to fix COOP errors
-    max_age=3600,
 )
 
-# Add security headers middleware
-@app.middleware("http")
-async def add_security_headers(request, call_next):
-    response = await call_next(request)
-    
-    # Remove or relax COOP for OAuth to work
-    # Don't set Cross-Origin-Opener-Policy for auth routes
-    if not request.url.path.startswith("/api/v1/auth/google"):
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
-    
-    # Add other security headers
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    
-    return response
+# Include routers with both /api and /api/v1 prefixes for backward compatibility
+app.include_router(auth.router, prefix="/api", tags=["Authentication"])
+app.include_router(datasets.router, prefix="/api", tags=["Datasets"])
+app.include_router(purchases.router, prefix="/api", tags=["Purchases"])
+app.include_router(downloads.router, prefix="/api", tags=["Downloads"])
+app.include_router(cart.router, prefix="/api", tags=["Cart"])
+app.include_router(admin.router, prefix="/api", tags=["Admin"])
+app.include_router(webhooks.router, prefix="/api", tags=["Webhooks"])
 
-
-# Health check endpoint
+# Also include v1 routes for backward compatibility
+app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
+app.include_router(datasets.router, prefix="/api/v1", tags=["Datasets"])
+app.include_router(purchases.router, prefix="/api/v1", tags=["Purchases"])
+app.include_router(downloads.router, prefix="/api/v1", tags=["Downloads"])
+app.include_router(cart.router, prefix="/api/v1", tags=["Cart"])
+app.include_router(admin.router, prefix="/api/v1", tags=["Admin"])
+app.include_router(webhooks.router, prefix="/api/v1", tags=["Webhooks"])
+# Health check
 @app.get("/health")
-@app.get("/api/v1/health")
 async def health_check():
-    """Health check endpoint"""
-    return {"status": "ok", "service": "helpuvio-api"}
-
-
-# Include routers
-app.include_router(auth.router)
-# app.include_router(datasets.router)
-# app.include_router(purchases.router)
-# app.include_router(admin.router)
-
-
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT
+    }
 # Root endpoint
 @app.get("/")
 async def root():
     return {
-        "message": "Helpuvio API",
+        "name": "B2B Lead Data Marketplace API",
         "version": "1.0.0",
         "docs": "/docs"
     }
 
-
-# Error handlers
+# Custom 404 error handler
 @app.exception_handler(404)
-async def not_found_handler(request, exc):
+async def custom_404_handler(request: Request, exc):
     return JSONResponse(
         status_code=404,
         content={
-            "detail": "Endpoint not found",
-            "path": str(request.url.path),
-            "method": request.method
+            "error": "Not Found",
+            "message": f"The endpoint '{request.url.path}' does not exist.",
+            "suggestion": "Check the API documentation at /docs for available endpoints."
         }
     )
 
-
-@app.exception_handler(500)
-async def internal_error_handler(request, exc):
+# Validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
+        status_code=422,
+        content={
+            "error": "Validation Error",
+            "message": "Invalid request data",
+            "details": exc.errors()
+        }
     )
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
