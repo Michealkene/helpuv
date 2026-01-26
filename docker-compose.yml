@@ -44,6 +44,25 @@ services:
   # HELPUVIO - Main Application
   # ============================================
   
+  # PostgreSQL for Helpuvio
+  helpuvio-postgres:
+    image: postgres:15-alpine
+    container_name: helpuvio_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helpuvio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - helpuvio_postgres_data:/var/lib/postgresql/data
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis for Helpuvio
   helpuvio-redis:
     image: redis:7-alpine
@@ -71,6 +90,8 @@ services:
       - ./helpuvio/backend/app:/app/app
       - helpuvio_uploads:/app/uploads
     depends_on:
+      helpuvio-postgres:
+        condition: service_healthy
       helpuvio-redis:
         condition: service_healthy
     networks:
@@ -112,7 +133,7 @@ services:
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.frontend.priority=1"
-      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
   # ============================================
   # N8N - Workflow Automation
@@ -139,8 +160,9 @@ services:
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
 
 volumes:
+  helpuvio_postgres_data:
   helpuvio_uploads:
-  frontend_node_modules:  # Named volume for node_modules
+  frontend_node_modules:
 
 networks:
   web:
