@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  openclaw-instance1:
+    image: node:22-bookworm
+    container_name: openclaw-instance1
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - NODE_ENV=production
+      - OPENCLAW_HOME=/app/.openclaw
+      - OPENCLAW_PORT=18792
+      - OPENCLAW_INSTANCE=instance1
+    env_file:
+      - .env
+    ports:
+      - "18792:18792"
+    volumes:
+      - ./config:/app/.openclaw
+      - ./workspace:/app/workspace
+      - openclaw-instance1-data:/app/data
+    command: >
+      bash -c "
+        npm install -g openclaw@latest &&
+        openclaw gateway --port 18792 --bind 0.0.0.0 --allow-unconfigured
+      "
+    networks:
+      - openclaw-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18792/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  openclaw-instance1-data:
+    driver: local
+
+networks:
+  openclaw-network:
+    driver: bridge

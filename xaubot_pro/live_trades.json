@@ -1,0 +1,34 @@
+[
+  {
+    "date": "2026-02-09",
+    "setup": {
+      "direction": "BUY",
+      "entry_price": 5004.24,
+      "stop_loss": 4976.99,
+      "take_profit": 5113.25,
+      "lot": 0.04,
+      "candle_range": 49.55,
+      "risk_dollars": 109.01,
+      "risk_pips": 2725.3,
+      "reward_dollars": 436.04
+    },
+    "status": "PENDING",
+    "placed_at": "2026-02-09 02:47:21"
+  },
+  {
+    "date": "2026-02-12",
+    "setup": {
+      "direction": "SELL",
+      "entry_price": 5074.4,
+      "stop_loss": 5100.09,
+      "take_profit": 4971.64,
+      "lot": 0.04,
+      "candle_range": 46.71,
+      "risk_dollars": 102.76,
+      "risk_pips": 2569.0,
+      "reward_dollars": 411.05
+    },
+    "status": "PENDING",
+    "placed_at": "2026-02-12 01:46:38"
+  }
+]

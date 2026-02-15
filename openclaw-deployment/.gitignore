@@ -1,0 +1,41 @@
+# Environment files with API keys - NEVER COMMIT THESE!
+**/.env
+
+# OpenClaw configuration that may contain sensitive data
+**/config/openclaw.json
+
+# Workspace data
+**/workspace/
+**/data/
+
+# Docker volumes
+**/*-data/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Auth profiles and sessions
+**/auth-profiles.json
+**/sessions/
+**/paired.json
+
+# Backup files
+*.bak
+*.backup

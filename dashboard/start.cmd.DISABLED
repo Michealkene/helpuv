@@ -1,0 +1,6 @@
+@echo off
+set ACCESS_TOKEN=openclaw2026
+set DASHBOARD_PORT=80
+set JWT_SECRET=openclaw-dashboard-secret-2026
+cd /d C:\Users\Administrator\dashboard
+"C:\Program Files\nodejs\node.exe" server.js

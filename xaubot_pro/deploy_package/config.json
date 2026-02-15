@@ -1,0 +1,9 @@
+{
+  "mt5_login": 5046171682,
+  "mt5_password": "2i_hYuTw",
+  "mt5_server": "MetaQuotes-Demo",
+  "risk_per_trade": 100,
+  "min_lot": 0.01,
+  "max_lot": 5.0,
+  "starting_balance": 10000
+}

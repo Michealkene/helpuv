@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-dashboard",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0",
+    "jsonwebtoken": "^9.0.0",
+    "cookie-parser": "^1.4.6"
+  }
+}

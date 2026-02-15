@@ -1,0 +1,25 @@
+{
+  "name": "social-media-bots",
+  "version": "1.0.0",
+  "description": "Multi-platform social media automation using persistent browser profiles",
+  "main": "profile-manager.js",
+  "scripts": {
+    "setup": "node setup-profile.js",
+    "test": "echo \"Run setup-profile.js first, then test individual bots\""
+  },
+  "keywords": [
+    "automation",
+    "bot",
+    "twitter",
+    "tiktok",
+    "youtube",
+    "reddit",
+    "playwright",
+    "social-media"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

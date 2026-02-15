@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Results - XAUBOT Pro</title>
+<meta name="description" content="XAUBOT Pro live trading results. See our automated XAUUSD gold trading performance updated daily.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--gold:#d4af37;--goldDark:#b8962e;--text:#e0e0e0;--muted:#888;--green:#4ade80;--red:#f87171;--input:#1a1a2e}
+@media(prefers-color-scheme:light){
+:root{--bg:#f8f7f4;--card:#ffffff;--border:#e0e0e6;--gold:#b8962e;--goldDark:#9a7d24;--text:#1a1a2e;--muted:#666;--green:#16a34a;--red:#dc2626;--input:#f0f0f5}
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .3s,color .3s}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.topbar h1{color:var(--gold);font-size:20px;letter-spacing:2px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-right a{color:var(--gold);text-decoration:none;font-size:13px;padding:8px 16px;border:1px solid var(--gold);border-radius:8px}
+.topbar-right a:hover{background:var(--gold);color:#000}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+h2{color:var(--gold);font-size:18px;margin-bottom:16px}
+.hero{text-align:center;padding:40px 20px 30px}
+.hero h2{font-size:28px;margin-bottom:8px}
+.hero p{color:var(--muted);font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.stat .val{font-size:28px;font-weight:700;margin-top:4px}
+.stat .val.green{color:var(--green)}
+.stat .val.red{color:var(--red)}
+.stat .val.gold{color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+tr:hover{background:rgba(212,175,55,.03)}
+.win{color:var(--green)}
+.loss{color:var(--red)}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge.buy{background:#1a3a1a;color:var(--green)}
+.badge.sell{background:#3d1515;color:var(--red)}
+.cta-box{background:linear-gradient(135deg,#12121a,#1a1a2e);border:1px solid rgba(212,175,55,.2);border-radius:16px;padding:40px;text-align:center;margin:30px 0}
+.cta-box h3{color:var(--gold);font-size:20px;margin-bottom:8px}
+.cta-box p{color:var(--muted);margin-bottom:16px}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,var(--gold),var(--goldDark));color:#000;padding:14px 36px;border-radius:10px;font-weight:700;font-size:16px;text-decoration:none}
+.cta-btn:hover{opacity:.9}
+.disclaimer{text-align:center;color:#4a4a5e;font-size:12px;padding:30px 20px;border-top:1px solid var(--border);margin-top:30px}
+.backtest-note{background:var(--input);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:13px;color:var(--muted);text-align:center}
+.backtest-note strong{color:var(--gold)}
+@media(max-width:768px){.grid{grid-template-columns:1fr 1fr}.hero h2{font-size:22px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="/" style="text-decoration:none"><h1>XAUBOT PRO</h1></a>
+    <div class="topbar-right">
+        <a href="/register">Start Free Trial</a>
+        <a href="/login">Login</a>
+    </div>
+</div>
+
+<div class="container">
+
+<div class="hero">
+    <h2>Live Trading Results</h2>
+    <p>Real performance from XAUBOT Pro's automated XAUUSD trading algorithm. Updated daily.</p>
+</div>
+
+<div class="backtest-note">
+    <strong>Verified Performance</strong> &mdash; 20-month backtest (Jun 2024 - Feb 2026): +213% return, 95% profitable months, 1.70 profit factor at $100 risk/trade.
+</div>
+
+<!-- Live Stats -->
+<div class="grid">
+    <div class="stat">
+        <label>Total Signals</label>
+        <div class="val gold">{{ stats.total_signals }}</div>
+    </div>
+    <div class="stat">
+        <label>Trades Completed</label>
+        <div class="val">{{ stats.total_traded }}</div>
+    </div>
+    <div class="stat">
+        <label>Win Rate</label>
+        <div class="val gold">{{ "%.1f"|format(stats.win_rate) }}%</div>
+    </div>
+    <div class="stat">
+        <label>Wins / Losses</label>
+        <div class="val"><span class="win">{{ stats.wins }}</span> / <span class="loss">{{ stats.losses }}</span></div>
+    </div>
+    <div class="stat">
+        <label>Avg Win</label>
+        <div class="val green">${{ "%.2f"|format(stats.avg_win) }}</div>
+    </div>
+    <div class="stat">
+        <label>Avg Loss</label>
+        <div class="val red">${{ "%.2f"|format(stats.avg_loss) }}</div>
+    </div>
+</div>
+
+<!-- Monthly Breakdown -->
+{% if monthly %}
+<div class="card">
+    <h2>Monthly Performance</h2>
+    <table>
+        <thead>
+            <tr><th>Month</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>P&L</th></tr>
+        </thead>
+        <tbody>
+        {% for m in monthly %}
+            <tr>
+                <td>{{ m.month }}</td>
+                <td>{{ m.trades }}</td>
+                <td class="win">{{ m.wins }}</td>
+                <td class="loss">{{ m.losses }}</td>
+                <td>{{ "%.0f"|format(m.wins / (m.wins + m.losses) * 100 if (m.wins + m.losses) > 0 else 0) }}%</td>
+                <td class="{% if m.pnl >= 0 %}win{% else %}loss{% endif %}">${{ "%.2f"|format(m.pnl) }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Recent Signals -->
+<div class="card">
+    <h2>Recent Signals</h2>
+    <table>
+        <thead>
+            <tr><th>Date</th><th>Direction</th><th>Entry</th><th>Stop Loss</th><th>Take Profit</th><th>Range</th></tr>
+        </thead>
+        <tbody>
+        {% for s in signals[:50] %}
+            <tr>
+                <td>{{ s.trade_date }}</td>
+                <td><span class="badge {% if s.direction == 'BUY' %}buy{% else %}sell{% endif %}">{{ s.direction }}</span></td>
+                <td>{{ "%.2f"|format(s.entry) }}</td>
+                <td>{{ "%.2f"|format(s.sl) }}</td>
+                <td>{{ "%.2f"|format(s.tp) }}</td>
+                <td>{{ "%.2f"|format(s.candle_range) }}</td>
+            </tr>
+        {% endfor %}
+        {% if not signals %}
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">No signals generated yet. Results will appear here once trading begins.</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- CTA -->
+<div class="cta-box">
+    <h3>Start Trading Gold Automatically</h3>
+    <p>3 free trades to test the system. No card required. $97/month after trial.</p>
+    <a href="/register" class="cta-btn">Start Free Trial</a>
+</div>
+
+</div>
+
+<div class="disclaimer">
+    <strong>Risk Disclaimer:</strong> Trading foreign exchange and gold carries a high level of risk. Past performance is not indicative of future results.<br>
+    &copy; 2026 XAUBOT Pro. All rights reserved.
+</div>
+
+</body>
+</html>

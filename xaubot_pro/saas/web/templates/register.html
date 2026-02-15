@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up - XAUBOT Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--gold:#d4af37;--goldDark:#b8962e;--text:#e0e0e0;--muted:#888;--green:#4ade80;--red:#f87171;--input:#1a1a2e;--input-text:#fff;--trial-bg:linear-gradient(135deg,#1a3a1a,#0d2a0d);--trial-border:#2a5a2a;--trial-text:#4ade80;--trial-sub:#7ac99a;--error-bg:#3d1515;--error-border:#6b2020;--error-text:#ff6b6b;--fine:#666}
+@media(prefers-color-scheme:light){
+:root{--bg:#f8f7f4;--card:#ffffff;--border:#e0e0e6;--gold:#b8962e;--goldDark:#9a7d24;--text:#1a1a2e;--muted:#666;--green:#16a34a;--red:#dc2626;--input:#f0f0f5;--input-text:#1a1a2e;--trial-bg:linear-gradient(135deg,#dcfce7,#f0fdf4);--trial-border:#86efac;--trial-text:#16a34a;--trial-sub:#22863a;--error-bg:#fef2f2;--error-border:#fecaca;--error-text:#dc2626;--fine:#999}
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;transition:background .3s,color .3s}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:420px;margin:20px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.logo{text-align:center;margin-bottom:24px}
+.logo h1{color:var(--gold);font-size:28px;letter-spacing:2px}
+.logo p{color:var(--muted);font-size:14px;margin-top:4px}
+.trial-badge{background:var(--trial-bg);border:1px solid var(--trial-border);border-radius:8px;padding:12px;text-align:center;margin-bottom:20px}
+.trial-badge strong{color:var(--trial-text);font-size:15px}
+.trial-badge p{color:var(--trial-sub);font-size:12px;margin-top:4px}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px;margin-top:16px}
+input[type=email],input[type=password]{width:100%;padding:12px 16px;background:var(--input);border:1px solid var(--border);border-radius:8px;color:var(--input-text);font-size:15px;outline:none;transition:border .2s}
+input:focus{border-color:var(--gold)}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--goldDark));color:#000;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:24px;transition:opacity .2s}
+.btn:hover{opacity:.9}
+.error{background:var(--error-bg);border:1px solid var(--error-border);color:var(--error-text);padding:10px 14px;border-radius:8px;font-size:13px;margin-top:16px}
+.links{text-align:center;margin-top:20px;font-size:14px;color:var(--muted)}
+.links a{color:var(--gold);text-decoration:none}
+.links a:hover{text-decoration:underline}
+.fine{color:var(--fine);font-size:11px;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <h1>XAUBOT PRO</h1>
+        <p>Start Trading Gold Automatically</p>
+    </div>
+    <div class="trial-badge">
+        <strong>3 Free Trades Included</strong>
+        <p>No credit card required to start</p>
+    </div>
+    <form method="POST" action="/register{% if ref %}?ref={{ ref }}{% endif %}">
+        <input type="hidden" name="ref_code" value="{{ ref }}">
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="your@email.com" autocomplete="email">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Min 6 characters" autocomplete="new-password" minlength="6">
+        <button type="submit" class="btn">Create Account</button>
+    </form>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <div class="links">
+        Already have an account? <a href="/login">Sign In</a>
+    </div>
+    <p class="fine">By signing up you agree to our terms. $97/month after trial.</p>
+</div>
+</body>
+</html>

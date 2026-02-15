@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenClaw Multi-Agent Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242736;
+      --border: #2e3245;
+      --text: #e4e6f0;
+      --text-muted: #8b8fa3;
+      --accent: #6c7ee1;
+      --accent-hover: #8090f0;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --cyan: #22d3ee;
+      --magenta: #c084fc;
+      --orange: #fb923c;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo { font-size: 28px; }
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-summary {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.offline { background: var(--red); }
+
+    .btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn:hover { background: var(--accent); border-color: var(--accent); }
+
+    .btn-refresh { display: flex; align-items: center; gap: 6px; }
+
+    /* Layout Modes */
+    .layout-toggle {
+      display: flex;
+      background: var(--surface2);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .layout-toggle button {
+      padding: 6px 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+
+    .layout-toggle button.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Main Content */
+    .main {
+      padding: 20px;
+    }
+
+    /* Grid Layout */
+    .grid-view {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .grid-view.single-col { grid-template-columns: 1fr; }
+
+    /* Tab Layout */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: var(--surface);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab:hover { color: var(--text); background: var(--surface2); }
+    .tab.active { background: var(--accent); color: white; }
+
+    .tab .tab-status {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .tab .tab-status.online { background: var(--green); }
+    .tab .tab-status.offline { background: var(--red); }
+
+    /* Instance Card */
+    .instance-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+
+    .instance-card:hover { border-color: var(--accent); }
+    .instance-card.hidden { display: none; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .instance-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .instance-color.c1 { background: var(--green); }
+    .instance-color.c2 { background: var(--cyan); }
+    .instance-color.c3 { background: var(--magenta); }
+    .instance-color.c4 { background: var(--orange); }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .card-port {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+    }
+
+    .card-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .card-status.online {
+      background: rgba(74, 222, 128, 0.1);
+      color: var(--green);
+    }
+
+    .card-status.offline {
+      background: rgba(248, 113, 113, 0.1);
+      color: var(--red);
+    }
+
+    .card-status.checking {
+      background: rgba(251, 191, 36, 0.1);
+      color: var(--yellow);
+    }
+
+    .open-btn {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .open-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Iframe */
+    .card-body {
+      flex: 1;
+      position: relative;
+    }
+
+    .card-body iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      background: var(--bg);
+    }
+
+    .grid-view.single-col .card-body iframe {
+      height: 600px;
+    }
+
+    .tab-content .card-body iframe {
+      height: calc(100vh - 180px);
+    }
+
+    /* Loading overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay.hidden { display: none; }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .stat-icon.instances { background: rgba(108, 126, 225, 0.15); }
+    .stat-icon.online-stat { background: rgba(74, 222, 128, 0.15); }
+    .stat-icon.model { background: rgba(192, 132, 252, 0.15); }
+    .stat-icon.provider { background: rgba(251, 191, 36, 0.15); }
+
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+    /* Footer */
+    .footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .grid-view { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .tabs { flex-wrap: wrap; }
+    }
+
+    @media (max-width: 500px) {
+      .stats-bar { grid-template-columns: 1fr; }
+      .header { flex-wrap: wrap; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">&#129438;</span>
+      <h1>OpenClaw Multi-Agent Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <div class="status-summary" id="statusSummary">Checking...</div>
+
+      <div class="layout-toggle">
+        <button id="gridBtn" class="active" onclick="setLayout('grid')" title="Grid View">&#9638;</button>
+        <button id="tabBtn" onclick="setLayout('tabs')" title="Tab View">&#9776;</button>
+      </div>
+
+      <button class="btn btn-refresh" onclick="refreshAll()">&#8635; Refresh</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon instances">&#128187;</div>
+        <div class="stat-info">
+          <span class="stat-label">Total Instances</span>
+          <span class="stat-value" id="totalInstances">4</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon online-stat">&#9989;</div>
+        <div class="stat-info">
+          <span class="stat-label">Online</span>
+          <span class="stat-value" id="onlineCount">--</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon model">&#129302;</div>
+        <div class="stat-info">
+          <span class="stat-label">Model</span>
+          <span class="stat-value" style="font-size:13px;">OpenRouter Free</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon provider">&#128274;</div>
+        <div class="stat-info">
+          <span class="stat-label">Provider</span>
+          <span class="stat-value" style="font-size:13px;">OpenRouter</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs (hidden by default) -->
+    <div class="tabs" id="tabBar" style="display:none;"></div>
+
+    <!-- Instance Grid / Tab Content -->
+    <div class="grid-view" id="instanceContainer"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>OpenClaw Multi-Agent Dashboard &bull; Running <span id="footerCount">4</span> instances</span>
+    <span>
+      <a href="https://docs.openclaw.ai" target="_blank">Docs</a> &bull;
+      <a href="https://github.com/openclaw/openclaw" target="_blank">GitHub</a> &bull;
+      <a href="https://openrouter.ai/keys" target="_blank">OpenRouter</a>
+    </span>
+  </footer>
+
+  <script>
+    const INSTANCES = [
+      { id: 'original', name: 'Original', port: 18789, color: 'c1' },
+      { id: 'instance2', name: 'Instance 2', port: 18790, color: 'c2' },
+      { id: 'instance3', name: 'Instance 3', port: 18791, color: 'c3' },
+      { id: 'instance4', name: 'Instance 4', port: 18792, color: 'c4' },
+    ];
+
+    let currentLayout = 'grid';
+    let activeTab = 0;
+    let statuses = {};
+
+    // Build UI
+    function buildUI() {
+      const container = document.getElementById('instanceContainer');
+      const tabBar = document.getElementById('tabBar');
+
+      container.innerHTML = '';
+      tabBar.innerHTML = '';
+
+      INSTANCES.forEach((inst, i) => {
+        const url = `http://127.0.0.1:${inst.port}/chat?session=main`;
+
+        // Tab button
+        const tab = document.createElement('button');
+        tab.className = `tab ${i === activeTab ? 'active' : ''}`;
+        tab.innerHTML = `<span class="tab-status ${statuses[inst.id] || 'checking'}"></span>${inst.name} <span style="opacity:0.6;font-size:11px">:${inst.port}</span>`;
+        tab.onclick = () => switchTab(i);
+        tabBar.appendChild(tab);
+
+        // Card
+        const card = document.createElement('div');
+        const isHidden = currentLayout === 'tabs' && i !== activeTab;
+        card.className = `instance-card ${isHidden ? 'hidden' : ''}`;
+        card.id = `card-${inst.id}`;
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="instance-color ${inst.color}"></div>
+              <span class="card-title">${inst.name}</span>
+              <span class="card-port">:${inst.port}</span>
+            </div>
+            <div class="card-header-right">
+              <span class="card-status ${statuses[inst.id] || 'checking'}" id="status-${inst.id}">
+                <span class="status-dot ${statuses[inst.id] || 'checking'}"></span>
+                ${(statuses[inst.id] === 'online' ? 'Online' : statuses[inst.id] === 'offline' ? 'Offline' : 'Checking...')}
+              </span>
+              <button class="open-btn" onclick="window.open('${url}', '_blank')">Open &#8599;</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="loading-overlay" id="loader-${inst.id}">
+              <div class="spinner"></div>
+              <span>Connecting to ${inst.name}...</span>
+            </div>
+            <iframe
+              src="${url}"
+              id="iframe-${inst.id}"
+              onload="document.getElementById('loader-${inst.id}').classList.add('hidden')"
+              onerror="handleIframeError('${inst.id}')"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+            ></iframe>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function setLayout(layout) {
+      currentLayout = layout;
+
+      document.getElementById('gridBtn').classList.toggle('active', layout === 'grid');
+      document.getElementById('tabBtn').classList.toggle('active', layout === 'tabs');
+      document.getElementById('tabBar').style.display = layout === 'tabs' ? 'flex' : 'none';
+
+      const container = document.getElementById('instanceContainer');
+      if (layout === 'tabs') {
+        container.classList.add('single-col');
+      } else {
+        container.classList.remove('single-col');
+      }
+
+      buildUI();
+    }
+
+    function switchTab(index) {
+      activeTab = index;
+      buildUI();
+    }
+
+    function handleIframeError(id) {
+      statuses[id] = 'offline';
+      updateStatusUI();
+    }
+
+    async function checkHealth(inst) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+
+        const res = await fetch(`http://127.0.0.1:${inst.port}/`, {
+          mode: 'no-cors',
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        statuses[inst.id] = 'online';
+      } catch {
+        statuses[inst.id] = 'offline';
+      }
+    }
+
+    async function checkAllHealth() {
+      await Promise.all(INSTANCES.map(checkHealth));
+      updateStatusUI();
+    }
+
+    function updateStatusUI() {
+      const onlineCount = Object.values(statuses).filter(s => s === 'online').length;
+
+      document.getElementById('onlineCount').textContent = onlineCount;
+      document.getElementById('statusSummary').innerHTML =
+        `<span class="status-dot ${onlineCount > 0 ? 'online' : 'offline'}"></span> ${onlineCount}/${INSTANCES.length} online`;
+
+      INSTANCES.forEach(inst => {
+        const el = document.getElementById(`status-${inst.id}`);
+        if (el) {
+          const s = statuses[inst.id] || 'checking';
+          el.className = `card-status ${s}`;
+          el.innerHTML = `<span class="status-dot ${s}"></span> ${s === 'online' ? 'Online' : s === 'offline' ? 'Offline' : 'Checking...'}`;
+        }
+      });
+
+      // Update tabs
+      const tabs = document.querySelectorAll('.tab .tab-status');
+      INSTANCES.forEach((inst, i) => {
+        if (tabs[i]) {
+          tabs[i].className = `tab-status ${statuses[inst.id] || 'checking'}`;
+        }
+      });
+    }
+
+    function refreshAll() {
+      INSTANCES.forEach(inst => {
+        const iframe = document.getElementById(`iframe-${inst.id}`);
+        const loader = document.getElementById(`loader-${inst.id}`);
+        if (iframe) {
+          if (loader) loader.classList.remove('hidden');
+          iframe.src = iframe.src;
+        }
+      });
+      checkAllHealth();
+    }
+
+    // Init
+    buildUI();
+    checkAllHealth();
+    setInterval(checkAllHealth, 30000);
+  </script>
+</body>
+</html>

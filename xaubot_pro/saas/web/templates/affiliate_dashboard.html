@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affiliate Dashboard - XAUBOT Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--gold:#d4af37;--goldDark:#b8962e;--text:#e0e0e0;--muted:#888;--green:#4ade80;--red:#f87171;--input:#1a1a2e}
+@media(prefers-color-scheme:light){
+:root{--bg:#f8f7f4;--card:#ffffff;--border:#e0e0e6;--gold:#b8962e;--goldDark:#9a7d24;--text:#1a1a2e;--muted:#666;--green:#16a34a;--red:#dc2626;--input:#f0f0f5}
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;transition:background .3s,color .3s}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.topbar h1{color:var(--gold);font-size:20px;letter-spacing:2px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-right span{color:var(--muted);font-size:13px}
+.topbar-right a{color:var(--gold);text-decoration:none;font-size:13px}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.stat .val{font-size:28px;font-weight:700;margin-top:4px}
+.stat .val.green{color:var(--green)}
+.stat .val.gold{color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card h3{color:var(--gold);margin-bottom:12px;font-size:16px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:8px 12px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
+tr:hover{background:rgba(212,175,55,.03)}
+.ref-box{background:var(--input);border:1px solid var(--gold);border-radius:8px;padding:16px;margin:16px 0;text-align:center}
+.ref-link{font-family:monospace;font-size:15px;color:var(--gold);word-break:break-all;cursor:pointer}
+.copy-btn{background:var(--gold);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:700;cursor:pointer;margin-top:8px;font-size:13px}
+.copy-btn:hover{opacity:.9}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge.active{background:#1a3a1a;color:var(--green)}
+.badge.trial{background:#3a3a1a;color:var(--gold)}
+.badge.none{background:var(--input);color:var(--muted)}
+.commission-rate{background:var(--card);border:1px solid rgba(212,175,55,.2);border-radius:12px;padding:20px;text-align:center;margin-bottom:16px}
+.commission-rate .big{font-size:36px;font-weight:800;color:var(--gold)}
+.commission-rate .sub{color:var(--muted);font-size:14px;margin-top:4px}
+@media(max-width:768px){.grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>XAUBOT PRO AFFILIATES</h1>
+    <div class="topbar-right">
+        <span>{{ aff.name }} ({{ aff.email }})</span>
+        <a href="/affiliate/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+<!-- Stats Grid -->
+<div class="grid">
+    <div class="stat">
+        <label>Total Clicks</label>
+        <div class="val gold">{{ aff.total_clicks }}</div>
+    </div>
+    <div class="stat">
+        <label>Total Sales</label>
+        <div class="val green">{{ aff.total_sales }}</div>
+    </div>
+    <div class="stat">
+        <label>Total Earned</label>
+        <div class="val green">${{ "%.2f"|format(aff.total_earned) }}</div>
+    </div>
+    <div class="stat">
+        <label>Balance (Unpaid)</label>
+        <div class="val gold">${{ "%.2f"|format(aff.balance) }}</div>
+    </div>
+    <div class="stat">
+        <label>Conversion Rate</label>
+        <div class="val">{{ "%.1f"|format(aff.total_sales / aff.total_clicks * 100 if aff.total_clicks > 0 else 0) }}%</div>
+    </div>
+</div>
+
+<!-- Commission Rate -->
+<div class="commission-rate">
+    <div class="big">{{ "%.0f"|format(aff.commission_rate * 100) }}%</div>
+    <div class="sub">Recurring commission on every referral payment (${{ "%.2f"|format(97 * aff.commission_rate) }}/month per subscriber)</div>
+</div>
+
+<!-- Referral Link -->
+<div class="card">
+    <h3>Your Referral Link</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:8px">Share this link. Anyone who signs up and subscribes earns you {{ "%.0f"|format(aff.commission_rate * 100) }}% commission.</p>
+    <div class="ref-box">
+        <div class="ref-link" id="ref-link" onclick="copyLink()">{{ domain }}/ref/{{ aff.ref_code }}</div>
+        <br>
+        <button class="copy-btn" onclick="copyLink()">Copy Link</button>
+        <span id="copy-msg" style="color:var(--green);font-size:13px;margin-left:8px;display:none">Copied!</span>
+    </div>
+</div>
+
+<!-- Referred Users -->
+<div class="card">
+    <h3>Referred Users ({{ referred_users|length }})</h3>
+    <table>
+        <thead>
+            <tr><th>Email</th><th>Status</th><th>Signed Up</th></tr>
+        </thead>
+        <tbody>
+        {% for u in referred_users %}
+            <tr>
+                <td>{{ u.email[:3] }}***{{ u.email[u.email.index('@'):] }}</td>
+                <td><span class="badge {{ u.sub_status }}">{{ u.sub_status|upper }}</span></td>
+                <td>{{ u.created_at[:10] }}</td>
+            </tr>
+        {% endfor %}
+        {% if not referred_users %}
+            <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">No referrals yet. Share your link to start earning!</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Recent Clicks -->
+<div class="card">
+    <h3>Recent Clicks</h3>
+    <table>
+        <thead>
+            <tr><th>Time</th><th>IP</th></tr>
+        </thead>
+        <tbody>
+        {% for c in recent_clicks %}
+            <tr>
+                <td>{{ c.timestamp[:19] }}</td>
+                <td>{{ c.ip }}</td>
+            </tr>
+        {% endfor %}
+        {% if not recent_clicks %}
+            <tr><td colspan="2" style="text-align:center;color:var(--muted);padding:20px">No clicks recorded yet</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Payout Info -->
+<div class="card">
+    <h3>Payout Settings</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:12px">Commissions are paid in Bitcoin. Minimum payout: $50.</p>
+    {% if aff.btc_payout_address %}
+    <p><strong>BTC Address:</strong> <span style="font-family:monospace;color:var(--gold)">{{ aff.btc_payout_address }}</span></p>
+    {% else %}
+    <p style="color:var(--red);font-size:13px">No BTC payout address set. Contact admin to add one.</p>
+    {% endif %}
+</div>
+
+</div>
+
+<script>
+function copyLink() {
+    const text = document.getElementById('ref-link').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const msg = document.getElementById('copy-msg');
+        msg.style.display = 'inline';
+        setTimeout(() => msg.style.display = 'none', 2000);
+    });
+}
+</script>
+
+</body>
+</html>

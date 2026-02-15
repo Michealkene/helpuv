@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - XAUBOT Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root,[data-theme="dark"]{
+--bg:#07080a;--bg2:#0d0f14;--bg3:#13151c;
+--card:#12141b;--card-hover:#171a23;--card-border:#1f222e;
+--gold:#d4af37;--gold2:#e8c84a;--goldDark:#a68b2c;--goldGlow:rgba(212,175,55,0.12);--goldBorder:rgba(212,175,55,0.2);
+--text:#f0f1f5;--text2:#a0a4b4;--muted:#5e6275;
+--green:#2ee07a;--greenDim:#1a8a4a;--greenBg:rgba(46,224,122,0.08);--greenBorder:rgba(46,224,122,0.18);
+--red:#ff4757;--redDim:#a83040;--redBg:rgba(255,71,87,0.08);--redBorder:rgba(255,71,87,0.18);
+--blue:#4a90ff;--blueBg:rgba(74,144,255,0.08);--blueBorder:rgba(74,144,255,0.18);
+--input:#14161e;--input-text:#f0f1f5;
+--sidebar-bg:linear-gradient(180deg,#0a0c12 0%,#0e1018 100%);
+--page-glow:radial-gradient(ellipse at 20% 0%,rgba(212,175,55,0.03) 0%,transparent 60%);
+}
+[data-theme="light"]{
+--bg:#f4f4f8;--bg2:#ecedf2;--bg3:#e4e5ec;
+--card:#ffffff;--card-hover:#fafafa;--card-border:#dfe0e8;
+--gold:#b08a1e;--gold2:#c99d22;--goldDark:#8a6d16;--goldGlow:rgba(176,138,30,0.08);--goldBorder:rgba(176,138,30,0.18);
+--text:#13141e;--text2:#5a5d70;--muted:#8a8da0;
+--green:#16a34a;--greenDim:#0f7a38;--greenBg:rgba(22,163,74,0.06);--greenBorder:rgba(22,163,74,0.14);
+--red:#dc2626;--redDim:#b81c1c;--redBg:rgba(220,38,38,0.05);--redBorder:rgba(220,38,38,0.12);
+--blue:#2563eb;--blueBg:rgba(37,99,235,0.05);--blueBorder:rgba(37,99,235,0.12);
+--input:#f0f0f5;--input-text:#13141e;
+--sidebar-bg:linear-gradient(180deg,#fafafa 0%,#f5f5f8 100%);
+--page-glow:radial-gradient(ellipse at 20% 0%,rgba(176,138,30,0.04) 0%,transparent 60%);
+}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;display:flex;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:var(--page-glow);pointer-events:none;z-index:0}
+
+/* ── SIDEBAR ── */
+.sb{width:232px;background:var(--sidebar-bg);border-right:1px solid var(--card-border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200}
+.sb-brand{padding:20px 16px;display:flex;align-items:center;gap:10px}
+.sb-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;position:relative}
+.sb-logo::after{content:'';position:absolute;inset:-2px;border-radius:10px;background:linear-gradient(135deg,var(--gold),transparent);opacity:.3;animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:.5;transform:scale(1.05)}}
+.sb-logo svg{width:18px;height:18px;fill:#000}
+.sb-name{font-size:15px;font-weight:800;letter-spacing:1.5px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-nav{flex:1;padding:8px;overflow-y:auto}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:1px;position:relative;overflow:hidden}
+.sb-item:hover{background:rgba(212,175,55,0.04);color:var(--text)}
+.sb-item.active{background:rgba(212,175,55,0.06);color:var(--gold)}
+.sb-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--gold)}
+.sb-item svg{width:18px;height:18px;flex-shrink:0;stroke-width:1.8}
+.sb-sep{height:1px;background:var(--card-border);margin:10px 12px}
+.sb-foot{padding:12px;border-top:1px solid var(--card-border)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px}
+.sb-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--goldDark));display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;font-size:14px;font-family:'JetBrains Mono',monospace}
+.sb-uinfo{flex:1;min-width:0}
+.sb-uemail{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.sb-ustatus{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.sb-ustatus.active{color:var(--green)}.sb-ustatus.trial{color:var(--gold)}.sb-ustatus.expired{color:var(--red)}.sb-ustatus.none{color:var(--muted)}
+
+/* ── MAIN ── */
+.main{flex:1;margin-left:232px;position:relative;z-index:1}
+.top{height:52px;background:var(--bg2);border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.top h2{font-size:14px;font-weight:600;letter-spacing:.3px}
+.top-r{display:flex;align-items:center;gap:10px}
+.bot-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.bot-pill.on{background:var(--greenBg);border:1px solid var(--greenBorder);color:var(--green)}
+.bot-pill.on .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.bot-pill.off{background:var(--bg3);border:1px solid var(--card-border);color:var(--muted)}
+.th-btn{background:var(--bg3);border:1px solid var(--card-border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.th-btn:hover{border-color:var(--gold);color:var(--gold)}
+.top-link{color:var(--muted);text-decoration:none;font-size:12px;font-weight:500}
+.top-link:hover{color:var(--gold)}
+.cnt{padding:24px;max-width:1200px}
+
+/* ── PANELS ── */
+.pnl{display:none;animation:fadeUp .35s ease}.pnl.act{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── CARDS ── */
+.cd{background:var(--card);border:1px solid var(--card-border);border-radius:14px;transition:all .2s}
+.cd:hover{background:var(--card-hover);border-color:rgba(212,175,55,0.12)}
+.cd-glow{border-color:var(--goldBorder);box-shadow:0 0 0 1px rgba(212,175,55,0.05),0 8px 32px rgba(0,0,0,0.2),0 0 60px rgba(212,175,55,0.04)}
+.cd-glow:hover{border-color:rgba(212,175,55,0.3);box-shadow:0 0 0 1px rgba(212,175,55,0.1),0 12px 40px rgba(0,0,0,0.25),0 0 80px rgba(212,175,55,0.06)}
+
+/* animated gradient border for hero cards */
+.cd-hero{position:relative;background:var(--card);border-radius:14px;overflow:hidden}
+.cd-hero::before{content:'';position:absolute;inset:-1px;border-radius:15px;background:conic-gradient(from 0deg,var(--gold),var(--goldDark),rgba(212,175,55,0.1),var(--gold));animation:spin 4s linear infinite;z-index:-2}
+.cd-hero::after{content:'';position:absolute;inset:1px;border-radius:13px;background:var(--card);z-index:-1}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{padding:18px 20px;position:relative}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.kpi-icon.green{background:var(--greenBg);color:var(--green);border:1px solid var(--greenBorder)}
+.kpi-icon.gold{background:var(--goldGlow);color:var(--gold);border:1px solid var(--goldBorder)}
+.kpi-icon.red{background:var(--redBg);color:var(--red);border:1px solid var(--redBorder)}
+.kpi-icon.blue{background:var(--blueBg);color:var(--blue);border:1px solid var(--blueBorder)}
+.kpi-lbl{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi-val{font-size:26px;font-weight:800;font-family:'JetBrains Mono','Inter',monospace;letter-spacing:-.5px;line-height:1.3}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500}
+.kpi-val.g{color:var(--green)}.kpi-val.r{color:var(--red)}.kpi-val.go{color:var(--gold)}
+
+/* ── HERO CHART ── */
+.eq-box{padding:20px;margin-bottom:20px}
+.eq-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.eq-hdr h3{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.5px;text-transform:uppercase}
+.t-range{display:flex;gap:3px;background:var(--bg2);border-radius:8px;padding:2px}
+.t-range button{background:none;border:none;color:var(--muted);padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.t-range button:hover{color:var(--text)}
+.t-range button.on{background:var(--goldGlow);color:var(--gold);box-shadow:0 0 12px rgba(212,175,55,0.1)}
+
+/* ── SIGNAL ── */
+.sig{padding:20px;margin-bottom:20px}
+.sig-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sig-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 16px;border-radius:8px;font-weight:700;font-size:13px;font-family:'JetBrains Mono',monospace}
+.sig-badge.buy{background:var(--greenBg);color:var(--green);border:1px solid var(--greenBorder)}
+.sig-badge.sell{background:var(--redBg);color:var(--red);border:1px solid var(--redBorder)}
+.sig-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sig-m{background:var(--bg2);border-radius:10px;padding:14px;text-align:center}
+.sig-m .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:600}
+.sig-m .v{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
+
+/* ── ROI ── */
+.roi{padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:20px}
+.roi-ico{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#000;font-family:'JetBrains Mono',monospace;flex-shrink:0;box-shadow:0 4px 20px rgba(212,175,55,0.2)}
+.roi-info{flex:1}
+.roi-big{font-size:22px;font-weight:800;color:var(--green);font-family:'JetBrains Mono',monospace}
+.roi-sm{font-size:12px;color:var(--muted);margin-top:2px}
+.roi-r{text-align:right}
+.roi-r .val{font-weight:700;font-size:14px;font-family:'JetBrains Mono',monospace}
+.roi-r .val.pos{color:var(--green)}.roi-r .val.neg{color:var(--red)}
+.roi-r .note{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── DEMO BANNER ── */
+.demo-bar{background:linear-gradient(90deg,rgba(212,175,55,0.06),rgba(212,175,55,0.02));border:1px solid var(--goldBorder);border-radius:10px;padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--gold);font-weight:600}
+.demo-bar .pulse{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:blink 2s ease infinite;flex-shrink:0}
+
+/* ── ONBOARDING ── */
+.ob{padding:24px;margin-bottom:20px}
+.ob h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.ob .sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.ob-steps{display:flex;flex-direction:column;gap:10px}
+.ob-s{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:10px;background:var(--bg2);border:1px solid var(--card-border);transition:all .15s}
+.ob-s:hover{border-color:var(--goldBorder)}
+.ob-s .ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--card-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:transparent}
+.ob-s.done .ck{background:linear-gradient(135deg,var(--green),var(--greenDim));border-color:var(--green);color:#fff;box-shadow:0 0 12px rgba(46,224,122,0.2)}
+.ob-s .txt{flex:1}.ob-s .txt h4{font-size:13px;font-weight:600;margin-bottom:2px}.ob-s .txt p{font-size:11px;color:var(--muted)}
+.ob-s .act{font-size:12px;color:var(--gold);cursor:pointer;font-weight:700;white-space:nowrap}
+
+/* ── WIN RATE RING ── */
+.wr-box{text-align:center}
+.wr{width:140px;height:140px;position:relative;margin:0 auto 12px}
+.wr svg{transform:rotate(-90deg)}
+.wr .bg{fill:none;stroke:var(--card-border);stroke-width:10}
+.wr .fg{fill:none;stroke:url(#goldGrad);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 6px rgba(212,175,55,0.3))}
+.wr-c{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.wr-c .pct{font-size:28px;font-weight:800;color:var(--gold);font-family:'JetBrains Mono',monospace}
+.wr-c .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+
+/* ── HEATMAP ── */
+.hm{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.hm-h{font-size:9px;color:var(--muted);text-align:center;padding:3px 0;font-weight:600;letter-spacing:.5px}
+.hm-c{aspect-ratio:1;border-radius:4px;font-size:8px;display:flex;align-items:center;justify-content:center;color:transparent;transition:all .15s;cursor:default;font-family:'JetBrains Mono',monospace;font-weight:600}
+.hm-c:hover{transform:scale(1.4);z-index:2;color:var(--text);font-size:7px}
+.hm-c.p1{background:rgba(46,224,122,0.12)}.hm-c.p2{background:rgba(46,224,122,0.28)}.hm-c.p3{background:rgba(46,224,122,0.5)}
+.hm-c.l1{background:rgba(255,71,87,0.12)}.hm-c.l2{background:rgba(255,71,87,0.28)}.hm-c.l3{background:rgba(255,71,87,0.5)}
+.hm-c.emp{background:var(--bg2)}
+
+/* ── METRICS GRID ── */
+.mg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.mg-i{padding:18px;text-align:center}
+.mg-i .l{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.mg-i .v{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px;border-bottom:1px solid var(--card-border);font-weight:600}
+td{padding:10px 14px;border-bottom:1px solid var(--card-border);font-size:12px;font-variant-numeric:tabular-nums}
+tr{transition:background .1s}tr:hover{background:rgba(212,175,55,0.02)}
+.w{color:var(--green)}.l{color:var(--red)}
+.dir-tag{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.dir-tag.buy{background:var(--greenBg);color:var(--green)}.dir-tag.sell{background:var(--redBg);color:var(--red)}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;box-shadow:0 4px 16px rgba(212,175,55,0.15)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,175,55,0.25)}.btn:active{transform:translateY(0)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-o{background:none;border:1px solid var(--goldBorder);color:var(--gold);padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-o:hover{background:var(--goldGlow);border-color:var(--gold)}
+
+/* ── FORMS ── */
+.f-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.f-grp{margin-bottom:12px}
+.f-grp label{display:block;color:var(--muted);font-size:10px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+input[type=text],input[type=number],input[type=password],select{padding:10px 14px;background:var(--input);border:1px solid var(--card-border);border-radius:8px;color:var(--input-text);font-size:13px;outline:none;width:100%;transition:border .15s;font-family:inherit}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,0.08)}
+
+/* ── ALERTS ── */
+.alrt{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px}
+.alrt-ok{background:var(--greenBg);border:1px solid var(--greenBorder);color:var(--green)}
+.alrt-err{background:var(--redBg);border:1px solid var(--redBorder);color:var(--red)}
+.alrt-info{background:var(--blueBg);border:1px solid var(--blueBorder);color:var(--blue)}
+
+/* ── BTC ── */
+.btc-sec{padding:24px;text-align:center}
+.btc-addr{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all;padding:14px;background:var(--bg2);border-radius:10px;margin:14px 0;border:1px solid var(--card-border)}
+
+/* ── SUB BADGE ── */
+.s-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.s-badge.active{background:var(--greenBg);color:var(--green);border:1px solid var(--greenBorder)}
+.s-badge.trial{background:var(--goldGlow);color:var(--gold);border:1px solid var(--goldBorder)}
+.s-badge.expired{background:var(--redBg);color:var(--red);border:1px solid var(--redBorder)}
+.s-badge.none{background:var(--bg3);color:var(--muted);border:1px solid var(--card-border)}
+
+/* ── ACTIVITY ── */
+.af{max-height:320px;overflow-y:auto}
+.af-i{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--card-border)}
+.af-i:last-child{border-bottom:none}
+.af-d{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.af-d.w{background:var(--green);box-shadow:0 0 6px rgba(46,224,122,0.3)}.af-d.l{background:var(--red);box-shadow:0 0 6px rgba(255,71,87,0.3)}.af-d.i{background:var(--blue)}
+.af-txt{font-size:12px;color:var(--text2);line-height:1.5}
+.af-txt strong{color:var(--text);font-weight:600}
+.af-time{font-size:10px;color:var(--muted);margin-top:1px;font-family:'JetBrains Mono',monospace}
+
+.hidden{display:none}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){.kpi-row,.mg{grid-template-columns:repeat(2,1fr)}.sig-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+.sb{width:56px}.sb-name,.sb-item span,.sb-uinfo{display:none}.sb-brand{padding:14px 12px;justify-content:center}.sb-item{justify-content:center;padding:10px}.sb-item.active::before{display:none}.main{margin-left:56px}
+.f-row{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}.cnt{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG defs for gradients -->
+<svg width="0" height="0" style="position:absolute"><defs>
+<linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d4af37"/><stop offset="100%" stop-color="#e8c84a"/></linearGradient>
+</defs></svg>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sb">
+<div class="sb-brand">
+    <div class="sb-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <span class="sb-name">XAUBOT PRO</span>
+</div>
+<nav class="sb-nav">
+    <div class="sb-item active" onclick="go('overview')" data-t="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Overview</span>
+    </div>
+    <div class="sb-item" onclick="go('perf')" data-t="perf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Performance</span>
+    </div>
+    <div class="sb-item" onclick="go('hist')" data-t="hist">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Trade History</span>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-item" onclick="go('settings')" data-t="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+    </div>
+    <div class="sb-item" onclick="go('billing')" data-t="billing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Subscription</span>
+    </div>
+</nav>
+<div class="sb-foot">
+    <div class="sb-user">
+        <div class="sb-avatar">{{ user.email[0]|upper }}</div>
+        <div class="sb-uinfo">
+            <span class="sb-uemail">{{ user.email }}</span>
+            <span class="sb-ustatus {{ user.sub_status }}">{{ user.sub_status }}</span>
+        </div>
+    </div>
+</div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+<div class="top">
+    <h2 id="ptitle">Overview</h2>
+    <div class="top-r">
+        {% if user.sub_status in ['active','trial'] %}
+        <div class="bot-pill on"><span class="dot"></span>Live</div>
+        {% else %}
+        <div class="bot-pill off">Inactive</div>
+        {% endif %}
+        <button class="th-btn" onclick="togTheme()" id="thbtn" title="Theme"></button>
+        <a href="/logout" class="top-link">Logout</a>
+    </div>
+</div>
+
+<div class="cnt">
+{% if request.args.get('success')=='subscribed' %}<div class="alrt alrt-ok">Subscription activated! Trades placed automatically.</div>{% endif %}
+{% if request.args.get('error') %}<div class="alrt alrt-err">Payment issue. Try again or contact support.</div>{% endif %}
+
+<!-- ═══ OVERVIEW ═══ -->
+<div id="overview" class="pnl act">
+
+{% if stats.total == 0 %}
+<div class="demo-bar">
+    <span class="pulse"></span>
+    Showing backtested performance (Jun 2024 - Feb 2026). Your live results will replace this once trading begins.
+</div>
+{% endif %}
+
+<div class="kpi-row">
+    <div class="kpi cd">
+        <div class="kpi-top">
+            <span class="kpi-lbl">Total P&L</span>
+            <div class="kpi-icon green">$</div>
+        </div>
+        <div class="kpi-val {% if stats.total > 0 %}{% if stats.pnl >= 0 %}g{% else %}r{% endif %}{% else %}g{% endif %}">
+            {% if stats.total > 0 %}${{ "%.2f"|format(stats.pnl) }}{% else %}$21,309{% endif %}
+        </div>
+        <div class="kpi-sub">{% if stats.total > 0 %}All time{% else %}Backtest (20 months){% endif %}</div>
+    </div>
+    <div class="kpi cd">
+        <div class="kpi-top">
+            <span class="kpi-lbl">Win Rate</span>
+            <div class="kpi-icon gold">%</div>
+        </div>
+        <div class="kpi-val go">{% if stats.total > 0 %}{{ "%.1f"|format(stats.win_rate) }}%{% else %}29.9%{% endif %}</div>
+        <div class="kpi-sub">{% if stats.total > 0 %}{{ stats.wins }}W / {{ stats.losses }}L{% else %}130W / 305L{% endif %}</div>
+    </div>
+    <div class="kpi cd">
+        <div class="kpi-top">
+            <span class="kpi-lbl">Profit Factor</span>
+            <div class="kpi-icon blue">x</div>
+        </div>
+        <div class="kpi-val go" id="pf-val">{% if stats.total > 0 %}--{% else %}1.70{% endif %}</div>
+        <div class="kpi-sub">Gross win / gross loss</div>
+    </div>
+    <div class="kpi cd">
+        <div class="kpi-top">
+            <span class="kpi-lbl">Total Trades</span>
+            <div class="kpi-icon gold">#</div>
+        </div>
+        <div class="kpi-val">{% if stats.total > 0 %}{{ stats.total }}{% else %}435{% endif %}</div>
+        <div class="kpi-sub">{% if stats.total > 0 %}Executed by bot{% else %}Backtest trades{% endif %}</div>
+    </div>
+</div>
+
+<!-- ROI Banner -->
+{% if stats.total > 0 %}
+<div class="roi cd-glow">
+    <div class="roi-ico">$</div>
+    <div class="roi-info">
+        <div class="roi-big">${{ "%.2f"|format(stats.pnl) }}</div>
+        <div class="roi-sm">Total bot earnings</div>
+    </div>
+    <div class="roi-r">
+        {% if stats.pnl > 97 %}<div class="val pos">+${{ "%.2f"|format(stats.pnl - 97) }}</div>{% else %}<div class="val">${{ "%.2f"|format(stats.pnl) }}</div>{% endif %}
+        <div class="note">net vs $97/mo subscription</div>
+    </div>
+</div>
+{% else %}
+<div class="roi cd-glow">
+    <div class="roi-ico">$</div>
+    <div class="roi-info">
+        <div class="roi-big">$1,015 /mo avg</div>
+        <div class="roi-sm">Backtested at $100 risk per trade</div>
+    </div>
+    <div class="roi-r">
+        <div class="val pos">+213%</div>
+        <div class="note">20-month return on $10K</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Today's Signal -->
+{% if signal %}
+<div class="sig cd-hero">
+    <div class="sig-hd">
+        <div><h3 style="font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.5px;text-transform:uppercase">Today's Signal</h3><span style="font-size:11px;color:var(--muted)">{{ signal.trade_date }}</span></div>
+        <div class="sig-badge {% if signal.direction=='BUY' %}buy{% else %}sell{% endif %}">{% if signal.direction=='BUY' %}&#9650;{% else %}&#9660;{% endif %} {{ signal.direction }}</div>
+    </div>
+    <div class="sig-grid">
+        <div class="sig-m"><div class="l">Entry</div><div class="v">{{ "%.2f"|format(signal.entry) }}</div></div>
+        <div class="sig-m"><div class="l">Stop Loss</div><div class="v" style="color:var(--red)">{{ "%.2f"|format(signal.sl) }}</div></div>
+        <div class="sig-m"><div class="l">Take Profit</div><div class="v" style="color:var(--green)">{{ "%.2f"|format(signal.tp) }}</div></div>
+        <div class="sig-m"><div class="l">Risk</div><div class="v" style="color:var(--gold)">${{ "%.0f"|format(user.risk_per_trade) }}</div></div>
+    </div>
+</div>
+{% else %}
+<div class="cd" style="padding:24px;margin-bottom:20px;text-align:center">
+    <div style="width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1px solid var(--card-border)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="width:22px;height:22px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:4px">No Signal Today</h3>
+    <p style="color:var(--muted);font-size:12px">Signals generate daily during optimal market windows.</p>
+</div>
+{% endif %}
+
+<!-- Onboarding -->
+{% if user.sub_status == 'none' %}
+<div class="ob cd-glow">
+    <h3>Get Started with XAUBOT Pro</h3>
+    <p class="sub">Complete these steps to start automated gold trading.</p>
+    <div class="ob-steps">
+        <div class="ob-s {% if user.mt5_login %}done{% endif %}">
+            <div class="ck">&#10003;</div>
+            <div class="txt"><h4>Connect MT5 Account</h4><p>Enter your broker credentials so the bot can trade.</p></div>
+            {% if not user.mt5_login %}<span class="act" onclick="go('settings')">Configure &rarr;</span>{% endif %}
+        </div>
+        <div class="ob-s">
+            <div class="ck">&#10003;</div>
+            <div class="txt"><h4>Set Risk Parameters</h4><p>Choose risk per trade and lot size limits.</p></div>
+            <span class="act" onclick="go('settings')">Settings &rarr;</span>
+        </div>
+        <div class="ob-s">
+            <div class="ck">&#10003;</div>
+            <div class="txt"><h4>Activate Free Trial (3 Trades)</h4><p>Test with 3 free trades. No credit card.</p></div>
+            {% if user.mt5_login %}<span class="act" onclick="activateTrial()">Activate &rarr;</span>{% else %}<span style="font-size:11px;color:var(--muted)">Connect MT5 first</span>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Equity Curve -->
+<div class="eq-box cd">
+    <div class="eq-hdr">
+        <h3>Equity Curve</h3>
+        <div class="t-range">
+            <button class="on" onclick="setR('all',this)">All</button>
+            <button onclick="setR(90,this)">3M</button>
+            <button onclick="setR(30,this)">1M</button>
+            <button onclick="setR(7,this)">1W</button>
+        </div>
+    </div>
+    <canvas id="eqChart" height="170"></canvas>
+</div>
+
+<!-- Bottom Grid -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="cd" style="padding:20px">
+        <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Recent Activity</h3>
+        <div class="af">
+            {% for t in trades[:8] %}
+            <div class="af-i">
+                <div class="af-d {% if t.pnl_usd > 0 %}w{% elif t.pnl_usd < 0 %}l{% else %}i{% endif %}"></div>
+                <div>
+                    <div class="af-txt"><strong>{{ t.direction }}</strong> {% if t.status=='win' %}<span class="w">+${{ "%.2f"|format(t.pnl_usd) }}</span>{% elif t.status=='loss' %}<span class="l">-${{ "%.2f"|format(t.pnl_usd|abs) }}</span>{% else %}{{ t.status }}{% endif %}</div>
+                    <div class="af-time">{{ t.trade_date }}</div>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not trades %}<div style="text-align:center;padding:30px 10px;color:var(--muted);font-size:12px">Activity appears once bot starts trading.</div>{% endif %}
+        </div>
+    </div>
+    <div class="cd" style="padding:20px">
+        <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Account</h3>
+        <div style="display:flex;flex-direction:column;gap:1px">
+            {% for label,val in [('Status','<span class="s-badge '~user.sub_status~'">'~user.sub_status|upper~'</span>'),('Expires',(user.sub_expires[:10] if user.sub_expires else 'N/A')),('Risk/Trade','$'~"%.0f"|format(user.risk_per_trade)),('MT5 Account',(user.mt5_login or 'Not connected')),('Broker',(user.mt5_server or 'N/A'))] %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--card-border)">
+                <span style="color:var(--muted);font-size:12px">{{ label }}</span>
+                <span style="font-size:12px;font-weight:600">{{ val|safe }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ═══ PERFORMANCE ═══ -->
+<div id="perf" class="pnl">
+<div class="mg">
+    {% set d = {'P&L':('%.2f'|format(stats.pnl) if stats.total else '21,309','w' if stats.pnl>=0 or not stats.total else 'l'),'Win Rate':('%.1f'|format(stats.win_rate)~'%' if stats.total else '29.9%','go'),'Trades':(stats.total if stats.total else '435',''),'Profit Factor':('--','go'),'Avg Win':('--','w'),'Avg Loss':('--','l'),'Best Trade':('--','w'),'Worst Trade':('--','l'),'Max Drawdown':('--','l')} %}
+    {% for lbl,(val,cls) in d.items() %}
+    <div class="mg-i cd"><div class="l">{{ lbl }}</div><div class="v {{ cls }}" id="m-{{ loop.index }}">{% if val is string %}{{ val }}{% else %}{{ val }}{% endif %}</div></div>
+    {% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:260px 1fr;gap:14px;margin-bottom:20px">
+    <div class="cd" style="padding:24px">
+        <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;text-align:center">Win Rate</h3>
+        <div class="wr-box">
+            <div class="wr">
+                <svg width="140" height="140" viewBox="0 0 140 140"><circle class="bg" cx="70" cy="70" r="58"/><circle class="fg" cx="70" cy="70" r="58" id="wr-ring" stroke-dasharray="364.42" stroke-dashoffset="364.42"/></svg>
+                <div class="wr-c"><div class="pct" id="wr-pct">0%</div><div class="lbl">Win Rate</div></div>
+            </div>
+            <div style="display:flex;justify-content:center;gap:20px;font-size:13px">
+                <div><span class="w" style="font-weight:700;font-family:'JetBrains Mono',monospace">{{ stats.wins }}</span> <span style="color:var(--muted);font-size:11px">Wins</span></div>
+                <div><span class="l" style="font-weight:700;font-family:'JetBrains Mono',monospace">{{ stats.losses }}</span> <span style="color:var(--muted);font-size:11px">Losses</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="cd" style="padding:20px">
+        <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">P&L Calendar</h3>
+        <div class="hm" id="heatmap">
+            <div class="hm-h">M</div><div class="hm-h">T</div><div class="hm-h">W</div><div class="hm-h">T</div><div class="hm-h">F</div><div class="hm-h">S</div><div class="hm-h">S</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div class="cd" style="padding:20px"><h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Win/Loss</h3><canvas id="wlChart" height="200"></canvas></div>
+    <div class="cd" style="padding:20px"><h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Daily P&L</h3><canvas id="dpChart" height="200"></canvas></div>
+</div>
+<div class="cd" style="padding:20px">
+    <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Monthly Breakdown</h3>
+    <table><thead><tr><th>Month</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>P&L</th></tr></thead><tbody id="mtbl"></tbody></table>
+</div>
+</div>
+
+<!-- ═══ TRADE HISTORY ═══ -->
+<div id="hist" class="pnl">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h3 style="font-size:14px;font-weight:700">Trade History</h3>
+    <a href="/api/trades/csv" class="btn-o">Export CSV</a>
+</div>
+<div class="cd" style="padding:0;overflow-x:auto">
+<table>
+<thead><tr><th>Date</th><th>Dir</th><th>Entry</th><th>SL</th><th>TP</th><th>Lot</th><th>Risk</th><th>Status</th><th>P&L</th></tr></thead>
+<tbody>
+{% for t in trades %}
+<tr>
+    <td style="font-family:'JetBrains Mono',monospace;font-size:11px">{{ t.trade_date }}</td>
+    <td><span class="dir-tag {% if t.direction=='BUY' %}buy{% else %}sell{% endif %}">{{ t.direction }}</span></td>
+    <td>{{ "%.2f"|format(t.entry) }}</td><td>{{ "%.2f"|format(t.sl) }}</td><td>{{ "%.2f"|format(t.tp) }}</td>
+    <td>{{ t.lot }}</td><td>${{ "%.0f"|format(t.risk_usd) }}</td>
+    <td>{% if t.status=='win' %}<span class="w" style="font-weight:700">WIN</span>{% elif t.status=='loss' %}<span class="l" style="font-weight:700">LOSS</span>{% else %}{{ t.status|upper }}{% endif %}</td>
+    <td style="font-weight:700;font-family:'JetBrains Mono',monospace" class="{% if t.pnl_usd > 0 %}w{% elif t.pnl_usd < 0 %}l{% endif %}">${{ "%.2f"|format(t.pnl_usd) }}</td>
+</tr>
+{% endfor %}
+{% if not trades %}<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px">Trades appear here once the bot starts placing orders.</td></tr>{% endif %}
+</tbody></table></div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div id="settings" class="pnl">
+<div class="cd" style="padding:24px;margin-bottom:14px">
+    <h3 style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">MT5 Connection</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Credentials encrypted with AES-256. Never stored in plain text.</p>
+    <div class="f-row">
+        <div class="f-grp"><label>MT5 Login</label><input type="text" id="mt5_login" value="{{ user.mt5_login or '' }}" placeholder="e.g. 5046171682"></div>
+        <div class="f-grp"><label>MT5 Password</label><input type="password" id="mt5_password" placeholder="{% if user.mt5_password_enc %}(saved){% else %}Enter password{% endif %}"></div>
+        <div class="f-grp"><label>Broker Server</label>
+            <select id="mt5_server_select" onchange="if(this.value==='custom'){document.getElementById('mt5_server_custom').classList.remove('hidden')}else{document.getElementById('mt5_server_custom').classList.add('hidden')}">
+                <option value="">-- Select --</option>
+                <optgroup label="Popular"><option value="Exness-MT5Real">Exness Real</option><option value="Exness-MT5Trial">Exness Demo</option><option value="XMGlobal-MT5">XM Global</option><option value="ICMarketsSC-MT5">IC Markets</option><option value="Pepperstone-MT5 Live01">Pepperstone</option><option value="FPMarkets-MT5 Live">FP Markets</option><option value="FBS-Real">FBS</option><option value="OctaFX-MT5 Real">OctaFX</option></optgroup>
+                <optgroup label="More"><option value="FXTM-MT5 Real">FXTM</option><option value="TickmillLtd-MT5 Live">Tickmill</option><option value="Deriv-Server">Deriv</option><option value="HFMarketsGlobal-MT5 Live">HF Markets</option><option value="Vantage-MT5 Live">Vantage</option><option value="AvaTrade-MT5 Live">AvaTrade</option><option value="RoboForex-MT5ECN">RoboForex</option><option value="JustMarkets-MT5 Real">JustMarkets</option><option value="Alpari-MT5 Real">Alpari</option><option value="EightCap-MT5 Live">Eightcap</option><option value="BlackBull-MT5 Live">BlackBull</option><option value="ThinkMarkets-MT5 Live">ThinkMarkets</option><option value="AXI-MT5 Live">Axi</option></optgroup>
+                <option value="custom">Other (type manually)</option>
+            </select>
+            <input type="text" id="mt5_server_custom" class="hidden" style="margin-top:8px" value="{{ user.mt5_server or '' }}" placeholder="Server name">
+            <script>(function(){var s=document.getElementById('mt5_server_select'),c='{{ user.mt5_server or "" }}';if(c){var f=false;for(var o of s.options){if(o.value===c){o.selected=true;f=true;break}}if(!f){s.value='custom';document.getElementById('mt5_server_custom').classList.remove('hidden')}}})()</script>
+        </div>
+    </div>
+    <div style="display:flex;gap:10px"><button class="btn" onclick="saveMT5()">Save</button><button class="btn-o" onclick="testMT5()">Test Connection</button></div>
+    <div id="mt5-result" class="hidden" style="margin-top:12px"></div>
+</div>
+<div class="cd" style="padding:24px">
+    <h3 style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px">Risk Management</h3>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Control how the bot sizes positions.</p>
+    <div class="f-row">
+        <div class="f-grp"><label>Risk Per Trade ($)</label><input type="number" id="risk_per_trade" value="{{ user.risk_per_trade }}" min="10" max="5000" step="10"></div>
+        <div class="f-grp"><label>Min Lot</label><input type="number" id="min_lot" value="{{ user.min_lot }}" min="0.01" max="1" step="0.01"></div>
+        <div class="f-grp"><label>Max Lot</label><input type="number" id="max_lot" value="{{ user.max_lot }}" min="0.01" max="100" step="0.01"></div>
+    </div>
+    <button class="btn" onclick="saveRisk()">Save Risk Settings</button>
+</div>
+</div>
+
+<!-- ═══ SUBSCRIPTION ═══ -->
+<div id="billing" class="pnl">
+<div class="cd" style="padding:24px;margin-bottom:14px">
+    <h3 style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:14px">Current Plan</h3>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <span class="s-badge {{ user.sub_status }}" style="font-size:12px;padding:6px 18px">{{ user.sub_status|upper }}</span>
+        {% if user.sub_expires %}<span style="color:var(--muted);font-size:12px">Expires: <strong style="color:var(--text)">{{ user.sub_expires[:10] }}</strong></span>{% endif %}
+    </div>
+    {% if user.sub_status == 'none' and not user.free_trial_used %}<div class="alrt alrt-info">Free trial available! Set up MT5 and activate from Overview.</div>{% endif %}
+    {% if user.sub_status in ['none','expired','trial'] %}
+    <div class="cd-hero" style="padding:32px;text-align:center;margin-top:16px">
+        <div style="font-size:42px;font-weight:800;color:var(--gold);font-family:'JetBrains Mono',monospace">$97<span style="font-size:16px;font-weight:400;color:var(--muted);font-family:'Inter',sans-serif">/month</span></div>
+        <p style="color:var(--muted);font-size:13px;margin:8px 0 24px">Unlimited automated XAUUSD trades. Cancel anytime.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px;margin:0 auto 24px;text-align:left">
+            {% for feat in ['Automated daily trades','Dynamic lot sizing','Performance analytics','AES-256 encryption','30+ MT5 brokers','Priority support'] %}
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="color:var(--green);font-size:14px">&#10003;</span>{{ feat }}</div>
+            {% endfor %}
+        </div>
+        <button class="btn" onclick="payWithBTC()" style="min-width:240px;padding:14px 28px;font-size:15px">Pay with Bitcoin</button>
+    </div>
+    {% endif %}
+    {% if user.sub_status == 'active' %}<div class="alrt alrt-ok">Subscription active. Trades placed automatically each trading day.</div>{% endif %}
+</div>
+<div id="btc-section" class="cd btc-sec hidden" style="margin-bottom:14px">
+    <h3 style="color:var(--gold);margin-bottom:10px;font-size:15px">Pay with Bitcoin</h3>
+    <p style="color:var(--muted);font-size:13px">Send exactly:</p>
+    <div style="font-size:28px;font-weight:800;color:var(--gold);margin:14px 0;font-family:'JetBrains Mono',monospace" id="btc-amount">Loading...</div>
+    <p style="color:var(--muted);font-size:12px">($97.00 USD)</p>
+    <div class="btc-addr" id="btc-addr"></div>
+    <button class="btn" onclick="checkBTCPayment()" style="margin-top:10px">Check Payment</button>
+    <div id="btc-status" style="margin-top:10px;color:var(--muted);font-size:13px"></div>
+</div>
+<div class="cd" style="padding:20px">
+    <h3 style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Payment History</h3>
+    <table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th><th>Period</th></tr></thead><tbody>
+    {% for s in subs %}<tr><td>{{ s.created_at[:10] }}</td><td style="font-weight:700">${{ "%.2f"|format(s.amount) }}</td><td>{{ s.payment_method|upper }}</td><td class="{% if s.status=='active' %}w{% endif %}" style="font-weight:600">{{ s.status|upper }}</td><td>{{ s.start_date[:10] }} &mdash; {{ s.end_date[:10] }}</td></tr>{% endfor %}
+    {% if not subs %}<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px">No payments yet</td></tr>{% endif %}
+    </tbody></table>
+</div>
+</div>
+
+</div></div>
+
+<script>
+// Theme
+(function(){var s=localStorage.getItem('xaubot_theme'),d=matchMedia('(prefers-color-scheme:dark)').matches,t=s||(d?'dark':'light');document.documentElement.setAttribute('data-theme',t);setTimeout(()=>{var b=document.getElementById('thbtn');if(b)b.textContent=t==='dark'?'\u2600':'\u263D'},0);matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{if(!localStorage.getItem('xaubot_theme')){var t=e.matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.getElementById('thbtn').textContent=t==='dark'?'\u2600':'\u263D'}})})();
+function togTheme(){var c=document.documentElement.getAttribute('data-theme')||'dark',n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('xaubot_theme',n);document.getElementById('thbtn').textContent=n==='dark'?'\u2600':'\u263D'}
+
+// Nav
+var titles={overview:'Overview',perf:'Performance',hist:'Trade History',settings:'Settings',billing:'Subscription'};
+function go(n){document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('act'));document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));document.getElementById(n).classList.add('act');document.querySelector('.sb-item[data-t="'+n+'"]').classList.add('active');document.getElementById('ptitle').textContent=titles[n]||n}
+
+// MT5
+function getS(){var s=document.getElementById('mt5_server_select');return(s.value==='custom'||s.value==='')?document.getElementById('mt5_server_custom').value:s.value}
+async function saveMT5(){var l=document.getElementById('mt5_login').value,p=document.getElementById('mt5_password').value,s=getS();if(!l||!s)return alert('Login and server required');var b={mt5_login:l,mt5_server:s};b.mt5_password=p||'__saved__';var r=await fetch('/api/settings/mt5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});var d=await r.json();showR('mt5-result',d.success?'ok':'err',d.message||d.error);if(d.success)setTimeout(()=>location.reload(),1000)}
+async function testMT5(){showR('mt5-result','info','Testing...');var b={mt5_login:document.getElementById('mt5_login').value,mt5_password:document.getElementById('mt5_password').value||'',mt5_server:getS()};var r=await fetch('/api/settings/mt5/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});var d=await r.json();d.success?showR('mt5-result','ok','Connected! Balance: $'+(d.balance?.toFixed(2)||'N/A')):showR('mt5-result','err',d.error||'Failed')}
+async function saveRisk(){var b={risk_per_trade:+document.getElementById('risk_per_trade').value,min_lot:+document.getElementById('min_lot').value,max_lot:+document.getElementById('max_lot').value};var r=await fetch('/api/settings/risk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});var d=await r.json();alert(d.message||d.error)}
+async function activateTrial(){if(!confirm('Activate free trial? 3 free trades.'))return;var r=await fetch('/api/trial/activate',{method:'POST'});var d=await r.json();d.success?(alert(d.message),location.reload()):alert(d.error)}
+var btcOrd=null;
+async function payWithBTC(){var r=await fetch('/api/pay/btc/init',{method:'POST'});var d=await r.json();d.success?(btcOrd=d.order_id,document.getElementById('btc-amount').textContent=d.btc_amount+' BTC',document.getElementById('btc-addr').textContent=d.btc_address,document.getElementById('btc-section').classList.remove('hidden')):alert(d.error||'Failed')}
+async function checkBTCPayment(){if(!btcOrd)return;document.getElementById('btc-status').textContent='Checking...';var r=await fetch('/api/pay/btc/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:btcOrd})});var d=await r.json();d.success&&d.status==='confirmed'?(document.getElementById('btc-status').innerHTML='<span style="color:var(--green)">Confirmed! Redirecting...</span>',setTimeout(()=>location.href='/dashboard?success=subscribed',2000)):d.status==='already_confirmed'?location.href='/dashboard?success=subscribed':document.getElementById('btc-status').textContent='Waiting... ('+( d.received||0)+' BTC received)'}
+function showR(id,t,m){var e=document.getElementById(id);e.classList.remove('hidden');var c={ok:'var(--green)',err:'var(--red)',info:'var(--blue)'};e.innerHTML='<div style="padding:10px 14px;border-radius:8px;border:1px solid '+c[t]+';color:'+c[t]+';font-size:13px;margin-top:8px">'+m+'</div>'}
+
+// Charts
+var trades={{ trades|tojson }};
+var gW=0,gL=0,bT=-Infinity,wT=Infinity,mDD=0,pk=0,cm=0,wns=[],lss=[];
+trades.slice().reverse().forEach(t=>{var p=t.pnl_usd||0;cm+=p;if(cm>pk)pk=cm;var dd=pk-cm;if(dd>mDD)mDD=dd;if(p>0){gW+=p;wns.push(p);if(p>bT)bT=p}if(p<0){gL+=Math.abs(p);lss.push(p);if(p<wT)wT=p}});
+var pf=gL>0?(gW/gL):gW>0?Infinity:0,aW=wns.length?(gW/wns.length):0,aL=lss.length?(gL/lss.length):0;
+// Update perf metrics
+if(trades.length){var els=document.querySelectorAll('.mg-i .v');if(els[3])els[3].textContent=pf>0&&pf<Infinity?pf.toFixed(2):'--';if(els[4])els[4].textContent=aW?'$'+aW.toFixed(2):'--';if(els[5])els[5].textContent=aL?'-$'+aL.toFixed(2):'--';if(els[6])els[6].textContent=bT>-Infinity?'$'+bT.toFixed(2):'--';if(els[7])els[7].textContent=wT<Infinity?'-$'+Math.abs(wT).toFixed(2):'--';if(els[8])els[8].textContent=mDD?'-$'+mDD.toFixed(2):'--'}
+var pfEl=document.getElementById('pf-val');if(pfEl&&trades.length)pfEl.textContent=pf>0&&pf<Infinity?pf.toFixed(2):'--';
+
+// Win rate ring
+var wr={{ stats.win_rate }};var ring=document.getElementById('wr-ring');
+if(ring){var c2=2*Math.PI*58,off=c2-(wr/100)*c2;setTimeout(()=>{ring.style.strokeDashoffset=off},200)}
+document.getElementById('wr-pct').textContent=wr.toFixed(1)+'%';
+
+// Equity chart
+var aL=[],aD=[];
+if(trades.length>0){var c3=0;trades.slice().reverse().forEach(t=>{c3+=(t.pnl_usd||0);aL.push(t.trade_date);aD.push(c3)});var ctx=document.getElementById('eqChart'),eqC=null;
+function drawEq(lb,dt){if(eqC)eqC.destroy();var cs=getComputedStyle(document.documentElement);eqC=new Chart(ctx,{type:'line',data:{labels:lb,datasets:[{data:dt,borderColor:'#d4af37',backgroundColor:function(c){var g=c.chart.ctx.createLinearGradient(0,0,0,c.chart.height);g.addColorStop(0,'rgba(212,175,55,0.15)');g.addColorStop(1,'rgba(212,175,55,0)');return g}(ctx.getContext('2d')),fill:true,tension:0.35,pointRadius:0,borderWidth:2.5}]},options:{responsive:true,animation:{duration:900,easing:'easeOutQuart'},interaction:{intersect:false,mode:'index'},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(10,10,15,0.9)',titleColor:'#d4af37',bodyColor:'#f0f1f5',padding:12,cornerRadius:10,titleFont:{family:'JetBrains Mono'},bodyFont:{family:'JetBrains Mono'},displayColors:false,callbacks:{label:i=>'$'+i.parsed.y.toFixed(2)}}},scales:{x:{display:false},y:{grid:{color:cs.getPropertyValue('--card-border').trim()},ticks:{color:cs.getPropertyValue('--muted').trim(),callback:v=>'$'+v,font:{size:10,family:'JetBrains Mono'}}}}}})}
+drawEq(aL,aD);
+window.setR=function(d,b){document.querySelectorAll('.t-range button').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(d==='all'){drawEq(aL,aD)}else{var n=Math.min(d,aL.length);drawEq(aL.slice(-n),aD.slice(-n))}};
+
+// Doughnut
+var wC=trades.filter(t=>t.status==='win').length,lC=trades.filter(t=>t.status==='loss').length;
+if(wC+lC>0)new Chart(document.getElementById('wlChart'),{type:'doughnut',data:{labels:['Wins','Losses'],datasets:[{data:[wC,lC],backgroundColor:['rgba(46,224,122,0.75)','rgba(255,71,87,0.75)'],borderWidth:0,borderRadius:4}]},options:{responsive:true,cutout:'72%',plugins:{legend:{position:'bottom',labels:{color:'#888',font:{size:10,family:'Inter'},padding:14}}}}});
+
+// Daily bar
+var rec=trades.slice(0,30).reverse();
+if(rec.length)new Chart(document.getElementById('dpChart'),{type:'bar',data:{labels:rec.map(t=>t.trade_date),datasets:[{data:rec.map(t=>t.pnl_usd||0),backgroundColor:rec.map(t=>(t.pnl_usd||0)>=0?'rgba(46,224,122,0.5)':'rgba(255,71,87,0.5)'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#888',callback:v=>'$'+v,font:{size:10,family:'JetBrains Mono'}}}}}});
+
+// Monthly
+var md={};trades.forEach(t=>{var m=t.trade_date?t.trade_date.substring(0,7):'?';if(!md[m])md[m]={t:0,w:0,l:0,p:0};md[m].t++;if(t.status==='win')md[m].w++;if(t.status==='loss')md[m].l++;md[m].p+=(t.pnl_usd||0)});
+var tb=document.getElementById('mtbl');Object.keys(md).sort().reverse().forEach(m=>{var d=md[m],wr=d.t?((d.w/d.t)*100).toFixed(0)+'%':'--',c=d.p>=0?'w':'l';tb.innerHTML+='<tr><td style="font-weight:700">'+m+'</td><td>'+d.t+'</td><td class="w">'+d.w+'</td><td class="l">'+d.l+'</td><td>'+wr+'</td><td class="'+c+'" style="font-weight:700;font-family:JetBrains Mono,monospace">$'+d.p.toFixed(2)+'</td></tr>'});
+
+// Heatmap
+var hm=document.getElementById('heatmap'),dp={};trades.forEach(t=>{if(!dp[t.trade_date])dp[t.trade_date]=0;dp[t.trade_date]+=(t.pnl_usd||0)});
+var now=new Date(),sd=new Date(now);sd.setDate(sd.getDate()-55);while(sd.getDay()!==1)sd.setDate(sd.getDate()-1);
+for(var i=0;i<56;i++){var d=new Date(sd);d.setDate(d.getDate()+i);var k=d.toISOString().substring(0,10),c=document.createElement('div');c.className='hm-c';if(dp[k]!==undefined){var v=dp[k];c.className+=v>0?(v>200?' p3':v>50?' p2':' p1'):(v<-200?' l3':v<-50?' l2':' l1');c.title=k+': $'+v.toFixed(2)}else{c.className+=' emp'}c.textContent=d.getDate();hm.appendChild(c)}
+}else{window.setR=function(){}}
+</script>
+</body>
+</html>

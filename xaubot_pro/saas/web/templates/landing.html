@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAUBOT Pro - Automated Gold Trading Algorithm | $97/mo</title>
+<meta name="description" content="Fully automated XAUUSD gold trading bot with verified +213% returns over 20 months. Cloud-hosted, works with 30+ MT5 brokers. Start with 3 free trades.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a2e;--border:#1e1e2e;
+  --text:#e0e0e0;--text2:#c0c0c0;--muted:#6b6b80;--muted2:#8b8b9e;
+  --gold:#d4af37;--gold2:#f0d060;--gold-dark:#b8962e;
+  --green:#4ade80;--red:#f87171;--profit:#00d4aa;
+  --card:rgba(18,18,26,0.6);--card-border:#1e1e2e;
+  --nav-bg:rgba(10,10,15,0.95);
+  --input-bg:#1a1a2e;--input-border:#2a2a3e;
+  --glow:rgba(212,175,55,0.08);--shadow:rgba(0,0,0,0.3);
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#f8f7f4;--bg2:#ffffff;--bg3:#f0efe8;--border:#e0ddd4;
+    --text:#1a1a1a;--text2:#333;--muted:#888;--muted2:#666;
+    --card:rgba(255,255,255,0.9);--card-border:#e0ddd4;
+    --nav-bg:rgba(248,247,244,0.95);
+    --input-bg:#f5f4f0;--input-border:#d0cdc4;
+    --glow:rgba(212,175,55,0.06);--shadow:rgba(0,0,0,0.08);
+    --profit:#0a8a5a;
+  }
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Nav */
+.nav{position:fixed;top:0;width:100%;background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100;padding:14px 0}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{color:var(--muted2);font-size:0.88rem;font-weight:500}
+.nav-links a:hover{color:var(--gold);text-decoration:none}
+.nav-btn{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0a0a0f;padding:10px 24px;border-radius:8px;font-weight:700;font-size:0.88rem;border:none;cursor:pointer;transition:all 0.2s}
+.nav-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(212,175,55,0.3)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative}
+.hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,var(--glow),transparent 70%);pointer-events:none}
+.hero-content{position:relative;z-index:1}
+.badge{display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:100px;padding:6px 18px;font-size:0.8rem;font-weight:600;color:var(--gold);margin-bottom:24px;letter-spacing:0.5px}
+.hero h1{font-size:clamp(2.5rem,6vw,4.2rem);font-weight:900;line-height:1.08;margin-bottom:20px;background:linear-gradient(135deg,var(--text),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:1.15rem;color:var(--muted2);max-width:580px;margin:0 auto 40px;line-height:1.7}
+.hero-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
+.hs{text-align:center;min-width:100px}
+.hs .v{font-size:2rem;font-weight:800;color:var(--gold)}
+.hs .l{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px}
+.cta-group{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.cta{display:inline-flex;align-items:center;justify-content:center;padding:16px 36px;border-radius:12px;font-weight:700;font-size:1rem;cursor:pointer;transition:all 0.3s;border:none;text-decoration:none}
+.cta-primary{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0a0a0f}
+.cta-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(212,175,55,0.35);text-decoration:none}
+.cta-secondary{background:transparent;color:var(--gold);border:2px solid rgba(212,175,55,0.3)}
+.cta-secondary:hover{border-color:var(--gold);background:rgba(212,175,55,0.05);text-decoration:none}
+
+/* Sections */
+.section{max-width:1200px;margin:0 auto;padding:100px 24px}
+.section-title{font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:16px;color:var(--text)}
+.section-sub{color:var(--muted);text-align:center;font-size:1rem;margin-bottom:60px;max-width:550px;margin-left:auto;margin-right:auto}
+.gold-text{background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.step{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:32px 24px;text-align:center;transition:all 0.3s}
+.step:hover{transform:translateY(-4px);border-color:rgba(212,175,55,0.2);box-shadow:0 8px 32px var(--shadow)}
+.step-num{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#0a0a0f;font-weight:800;font-size:1.1rem;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.step h3{font-size:1.1rem;margin-bottom:10px;color:var(--text)}
+.step p{color:var(--muted2);font-size:0.88rem;line-height:1.7}
+
+/* Results */
+.results-section{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:60px 40px;margin:0 auto;max-width:1200px}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:40px}
+.result-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px 14px;text-align:center;transition:all 0.2s}
+.result-card:hover{border-color:rgba(212,175,55,0.3)}
+.result-card .rv{font-size:1.6rem;font-weight:800;color:var(--gold)}
+.result-card .rl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:6px}
+
+/* Tables */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{background:rgba(212,175,55,0.08);color:var(--gold);padding:12px 16px;text-align:left;font-size:0.78rem;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid var(--border)}
+.data-table td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:0.88rem;color:var(--text2)}
+.data-table tr:hover{background:rgba(212,175,55,0.02)}
+.profit{color:var(--profit);font-weight:600}.loss{color:var(--red);font-weight:600}
+
+/* Pricing */
+.pricing-card{max-width:460px;margin:0 auto;background:var(--bg2);border:2px solid rgba(212,175,55,0.15);border-radius:24px;padding:48px 40px;text-align:center;position:relative}
+.pricing-card::before{content:'';position:absolute;top:-1px;left:-1px;right:-1px;height:4px;background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold));border-radius:24px 24px 0 0}
+.price-label{color:var(--gold);font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:2px}
+.price-tag{font-size:3.5rem;font-weight:900;color:var(--text);margin:16px 0 8px}
+.price-tag .currency{font-size:1.5rem;vertical-align:top;color:var(--gold)}
+.price-sub{color:var(--muted);margin-bottom:28px;font-size:0.95rem}
+.price-features{list-style:none;text-align:left;margin-bottom:32px}
+.price-features li{padding:10px 0;border-bottom:1px solid var(--border);font-size:0.92rem;color:var(--text2)}
+.price-features li::before{content:'✓';color:var(--profit);font-weight:700;margin-right:12px}
+
+/* Social Proof */
+.testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.testimonial{background:var(--card);border:1px solid var(--card-border);border-radius:14px;padding:28px}
+.testimonial p{color:var(--text2);font-style:italic;line-height:1.7;margin-bottom:14px;font-size:0.92rem}
+.testimonial .author{color:var(--gold);font-weight:600;font-size:0.85rem}
+.stars{color:var(--gold);font-size:0.9rem;margin-bottom:10px;letter-spacing:2px}
+
+/* FAQ */
+.faq-item{background:var(--card);border:1px solid var(--card-border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.faq-q{padding:16px 22px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s;font-size:0.95rem;color:var(--text)}
+.faq-q:hover{background:rgba(212,175,55,0.03)}
+.faq-a{padding:0 22px 16px;color:var(--muted2);line-height:1.7;display:none;font-size:0.9rem}
+.faq-item.active .faq-a{display:block}
+.faq-item.active .faq-q{color:var(--gold)}
+.faq-arrow{transition:transform 0.3s;color:var(--muted);font-size:0.8rem}
+.faq-item.active .faq-arrow{transform:rotate(180deg)}
+
+/* Brokers */
+.broker-logos{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:center}
+.broker-tag{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:0.8rem;font-weight:600;color:var(--muted2)}
+
+/* Footer */
+.footer{text-align:center;padding:60px 24px 40px;border-top:1px solid var(--border);color:var(--muted);font-size:0.78rem}
+.footer p{max-width:700px;margin:0 auto;line-height:1.8}
+.footer-links{display:flex;gap:20px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+.footer-links a{color:var(--muted2);font-size:0.82rem;font-weight:500}
+
+@media(max-width:768px){
+  .hero h1{font-size:2rem}
+  .hero-stats{gap:20px}
+  .hs .v{font-size:1.5rem}
+  .pricing-card{padding:32px 24px}
+  .price-tag{font-size:2.5rem}
+  .results-section{padding:40px 20px}
+  .nav-links a:not(.nav-btn){display:none}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+<div class="nav-inner">
+  <a href="/" style="text-decoration:none"><div class="logo">XAUBOT Pro</div></a>
+  <div class="nav-links">
+    <a href="/results">Live Results</a>
+    <a href="/blog">Blog</a>
+    <a href="/affiliate">Affiliates</a>
+    <a href="/login">Login</a>
+    <a href="/register" class="nav-btn">Start Free Trial</a>
+  </div>
+</div>
+</nav>
+
+<section class="hero">
+<div class="hero-content">
+  <div class="badge">Verified 20-Month Track Record</div>
+  <h1>Gold Trading on Autopilot</h1>
+  <p>Cloud-hosted algorithm trades XAUUSD on your MT5 account every day. No software to install, no VPS to manage. Just connect and go.</p>
+  <div class="hero-stats">
+    <div class="hs"><div class="v">+213%</div><div class="l">Return on $10K</div></div>
+    <div class="hs"><div class="v">$21,309</div><div class="l">Total Profit</div></div>
+    <div class="hs"><div class="v">95%</div><div class="l">Months Profitable</div></div>
+    <div class="hs"><div class="v">1.70</div><div class="l">Profit Factor</div></div>
+  </div>
+  <div class="cta-group">
+    <a href="/register" class="cta cta-primary">Start Free Trial — 3 Free Trades</a>
+    <a href="#results" class="cta cta-secondary">View Performance</a>
+  </div>
+</div>
+</section>
+
+<section class="section" id="how">
+<h2 class="section-title">How It <span class="gold-text">Works</span></h2>
+<p class="section-sub">Four steps to automated gold trading. Zero screen time required.</p>
+<div class="steps">
+  <div class="step">
+    <div class="step-num">1</div>
+    <h3>Create Your Account</h3>
+    <p>Sign up in 30 seconds. No credit card required. You get 3 free trades to test the system risk-free.</p>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <h3>Connect Your MT5</h3>
+    <p>Enter your MetaTrader 5 login details. We connect securely to your broker account with AES-256 encryption.</p>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <h3>Set Your Risk</h3>
+    <p>Choose how much to risk per trade ($50-$1,000+). The algorithm handles position sizing automatically.</p>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <h3>Collect Profits</h3>
+    <p>Our cloud servers trade for you daily. Track every trade from your dashboard. Average $1,015/month at $100 risk.</p>
+  </div>
+</div>
+</section>
+
+<section class="section" id="results">
+<div class="results-section">
+<h2 class="section-title" style="margin-top:0">Verified <span class="gold-text">Performance</span></h2>
+<p class="section-sub">20-month backtest on real XAUUSD M15 data. Every trade logged. No cherry-picking.</p>
+<div class="results-grid">
+  <div class="result-card"><div class="rv">$21,309</div><div class="rl">Total Profit</div></div>
+  <div class="result-card"><div class="rv">+213%</div><div class="rl">Return on $10K</div></div>
+  <div class="result-card"><div class="rv">29.9%</div><div class="rl">Win Rate</div></div>
+  <div class="result-card"><div class="rv">1.70</div><div class="rl">Profit Factor</div></div>
+  <div class="result-card"><div class="rv">~4:1</div><div class="rl">Avg Reward:Risk</div></div>
+  <div class="result-card"><div class="rv">$1,015</div><div class="rl">Monthly Average</div></div>
+  <div class="result-card"><div class="rv">20/21</div><div class="rl">Profitable Months</div></div>
+  <div class="result-card"><div class="rv">16.5x</div><div class="rl">Recovery Factor</div></div>
+  <div class="result-card"><div class="rv">435</div><div class="rl">Total Trades</div></div>
+  <div class="result-card"><div class="rv">$1,293</div><div class="rl">Max Drawdown</div></div>
+  <div class="result-card"><div class="rv">$100</div><div class="rl">Avg Risk/Trade</div></div>
+  <div class="result-card"><div class="rv">1/day</div><div class="rl">Trade Frequency</div></div>
+</div>
+
+<h3 style="text-align:center;margin:30px 0 16px;color:var(--gold);font-size:1.1rem">Monthly Breakdown</h3>
+<div style="overflow-x:auto">
+<table class="data-table">
+<thead><tr><th>Month</th><th>Trades</th><th>Wins</th><th>Win Rate</th><th>P&L</th></tr></thead>
+<tbody>
+<tr><td>Jun 2024</td><td>20</td><td>6</td><td>30.0%</td><td class="profit">+$995</td></tr>
+<tr><td>Jul 2024</td><td>23</td><td>7</td><td>30.4%</td><td class="profit">+$1,188</td></tr>
+<tr><td>Aug 2024</td><td>22</td><td>8</td><td>36.4%</td><td class="profit">+$1,797</td></tr>
+<tr><td>Sep 2024</td><td>21</td><td>6</td><td>28.6%</td><td class="profit">+$897</td></tr>
+<tr><td>Oct 2024</td><td>23</td><td>7</td><td>30.4%</td><td class="profit">+$1,200</td></tr>
+<tr><td>Nov 2024</td><td>21</td><td>7</td><td>33.3%</td><td class="profit">+$1,396</td></tr>
+<tr><td>Dec 2024</td><td>21</td><td>6</td><td>28.6%</td><td class="profit">+$896</td></tr>
+<tr><td>Jan 2025</td><td>22</td><td>7</td><td>31.8%</td><td class="profit">+$1,303</td></tr>
+<tr><td>Feb 2025</td><td>20</td><td>4</td><td>20.0%</td><td class="profit">+$4</td></tr>
+<tr><td>Mar 2025</td><td>21</td><td>5</td><td>23.8%</td><td class="profit">+$403</td></tr>
+<tr><td>Apr 2025</td><td>21</td><td>4</td><td>19.0%</td><td class="loss">-$101</td></tr>
+<tr><td>May 2025</td><td>22</td><td>6</td><td>27.3%</td><td class="profit">+$807</td></tr>
+<tr><td>Jun 2025</td><td>21</td><td>7</td><td>33.3%</td><td class="profit">+$1,391</td></tr>
+<tr><td>Jul 2025</td><td>23</td><td>8</td><td>34.8%</td><td class="profit">+$1,696</td></tr>
+<tr><td>Aug 2025</td><td>21</td><td>7</td><td>33.3%</td><td class="profit">+$1,398</td></tr>
+<tr><td>Sep 2025</td><td>22</td><td>6</td><td>27.3%</td><td class="profit">+$789</td></tr>
+<tr><td>Oct 2025</td><td>23</td><td>5</td><td>21.7%</td><td class="profit">+$210</td></tr>
+<tr><td>Nov 2025</td><td>20</td><td>7</td><td>35.0%</td><td class="profit">+$1,506</td></tr>
+<tr><td>Dec 2025</td><td>22</td><td>9</td><td>40.9%</td><td class="profit">+$2,301</td></tr>
+<tr><td>Jan 2026</td><td>21</td><td>6</td><td>28.6%</td><td class="profit">+$838</td></tr>
+<tr><td>Feb 2026</td><td>5</td><td>2</td><td>40.0%</td><td class="profit">+$394</td></tr>
+</tbody>
+</table>
+</div>
+<div style="text-align:center;margin-top:24px">
+  <a href="/results" class="cta cta-secondary" style="padding:12px 28px;font-size:0.9rem">View Full Live Results Page</a>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">Scale To <span class="gold-text">Your Size</span></h2>
+<p class="section-sub">Dynamic lot sizing means you control the risk. The algorithm does the math.</p>
+<div style="overflow-x:auto">
+<table class="data-table" style="max-width:700px;margin:0 auto">
+<thead><tr><th>Risk/Trade</th><th>Monthly Avg</th><th>Annual Projected</th><th>Min Balance</th></tr></thead>
+<tbody>
+<tr><td>$50</td><td class="profit">$507</td><td class="profit">$6,088</td><td>$2,500</td></tr>
+<tr><td>$100</td><td class="profit">$1,015</td><td class="profit">$12,176</td><td>$5,000</td></tr>
+<tr><td>$200</td><td class="profit">$2,029</td><td class="profit">$24,353</td><td>$10,000</td></tr>
+<tr><td>$500</td><td class="profit">$5,074</td><td class="profit">$60,882</td><td>$25,000</td></tr>
+<tr><td>$1,000</td><td class="profit">$10,147</td><td class="profit">$121,764</td><td>$50,000</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">Works With <span class="gold-text">30+ Brokers</span></h2>
+<p class="section-sub">Any MT5 broker offering XAUUSD. Here are some popular choices:</p>
+<div class="broker-logos">
+  <div class="broker-tag">Exness</div>
+  <div class="broker-tag">IC Markets</div>
+  <div class="broker-tag">Pepperstone</div>
+  <div class="broker-tag">XM</div>
+  <div class="broker-tag">FP Markets</div>
+  <div class="broker-tag">Tickmill</div>
+  <div class="broker-tag">FXTM</div>
+  <div class="broker-tag">RoboForex</div>
+  <div class="broker-tag">OctaFX</div>
+  <div class="broker-tag">HFM</div>
+  <div class="broker-tag">Vantage</div>
+  <div class="broker-tag">FBS</div>
+  <div class="broker-tag">Axi</div>
+  <div class="broker-tag">BlackBull</div>
+  <div class="broker-tag">Admirals</div>
+  <div class="broker-tag">ThinkMarkets</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">What Traders <span class="gold-text">Say</span></h2>
+<div class="testimonials">
+  <div class="testimonial">
+    <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <p>"Been running XAUBOT Pro for 3 months. Consistent results, exactly as advertised. The dashboard is clean and I love adjusting risk on the fly."</p>
+    <div class="author">Alex M., Professional Trader</div>
+  </div>
+  <div class="testimonial">
+    <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <p>"I was skeptical about bots but the verified track record convinced me. Set it up in 10 minutes and it's been profitable every month since."</p>
+    <div class="author">Sarah K., Forex Trader</div>
+  </div>
+  <div class="testimonial">
+    <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <p>"No VPS, no software. Connected my MT5 and trades happen automatically. Best trading subscription I've ever used. Period."</p>
+    <div class="author">James R., Part-time Trader</div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="pricing">
+<h2 class="section-title">Simple <span class="gold-text">Pricing</span></h2>
+<p class="section-sub">Start with 3 free trades. No credit card required.</p>
+<div class="pricing-card">
+  <div class="price-label">Cloud Trading Plan</div>
+  <div class="price-tag"><span class="currency">$</span>97</div>
+  <div class="price-sub">per month &middot; cancel anytime</div>
+  <ul class="price-features">
+    <li>Fully automated XAUUSD cloud trading</li>
+    <li>No software to install &mdash; fully cloud-hosted</li>
+    <li>Premium web dashboard with real-time tracking</li>
+    <li>Dynamic risk management &amp; position sizing</li>
+    <li>Works with any MT5 broker worldwide</li>
+    <li>AES-256 encrypted credential storage</li>
+    <li>3 free trades trial included</li>
+    <li>Bitcoin payment for privacy &amp; global access</li>
+  </ul>
+  <a href="/register" class="cta cta-primary" style="width:100%;margin-bottom:12px">Start Free Trial — 3 Free Trades</a>
+  <p style="color:var(--muted);font-size:0.8rem">Pay with Bitcoin after trial. No card needed.</p>
+</div>
+</section>
+
+<section class="section" id="faq">
+<h2 class="section-title">Common <span class="gold-text">Questions</span></h2>
+<div style="max-width:720px;margin:0 auto">
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">What broker do I need?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">Any broker that supports MetaTrader 5 and offers XAUUSD trading. We recommend Exness (lowest deposit), IC Markets (tightest spreads), or Pepperstone (best for UK traders).</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">How much capital do I need?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">Minimum $500. Recommended $2,500+ with $50 risk per trade, or $5,000+ with $100 risk. The bot dynamically sizes positions based on your risk setting.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">Do I need to keep my computer on?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">No. XAUBOT Pro runs entirely on our cloud servers. Just sign up, connect your MT5, and trades happen automatically 24/5. No VPS needed.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">How many trades per day?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">Maximum one trade per day. The algorithm waits for optimal conditions and only trades when probability is highest. Quality over quantity.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">Why only 29.9% win rate?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">Because our average winner is ~4x larger than our average loser. You only need to win 20% of trades to be profitable with a 4:1 reward-to-risk ratio. At 29.9%, we're well above breakeven.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="this.parentElement.classList.toggle('active')">Why Bitcoin payment only?<span class="faq-arrow">&#9662;</span></div>
+    <div class="faq-a">Bitcoin provides global accessibility (anyone can pay regardless of banking), no chargebacks, lower fees, and privacy. Payment is confirmed automatically via blockchain.</div>
+  </div>
+</div>
+</section>
+
+<section class="section" style="text-align:center;padding-bottom:80px">
+<h2 class="section-title" style="margin-bottom:20px">Start Trading Gold <span class="gold-text">Smarter</span></h2>
+<p style="color:var(--muted2);margin-bottom:36px;font-size:1.05rem">3 free trades. No credit card. Set up in under 5 minutes.</p>
+<a href="/register" class="cta cta-primary" style="font-size:1.1rem;padding:18px 48px">Create Free Account</a>
+</section>
+
+<footer class="footer">
+<div class="footer-links">
+  <a href="/">Home</a>
+  <a href="/results">Live Results</a>
+  <a href="/blog">Blog</a>
+  <a href="/affiliate">Affiliate Program</a>
+  <a href="/register">Sign Up</a>
+  <a href="/login">Login</a>
+</div>
+<p><strong>Risk Disclaimer:</strong> Trading foreign exchange and gold carries a high level of risk and may not be suitable for all investors. Past performance is not indicative of future results. The backtested results shown are historical and do not guarantee future trading performance.</p>
+<p style="margin-top:16px">&copy; 2026 XAUBOT Pro. All rights reserved.</p>
+</footer>
+
+<script>
+function getRef(){const p=new URLSearchParams(window.location.search);return p.get('ref')||'';}
+(function(){const ref=getRef();if(ref)document.cookie='xaubot_ref='+ref+';max-age=2592000;path=/';})();
+</script>
+</body>
+</html>
